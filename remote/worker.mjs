@@ -43,13 +43,18 @@ function unavailable(request, detail) {
 
 export default {
   async fetch(request, env) {
-    const rockbot = env?.CUSTOMER_HTTP_ROCKBOT;
-    if (!rockbot || typeof rockbot.fetch !== "function") {
-      return unavailable(request, "The private Rockbot binding is not configured.");
+    const origin = env?.ROCKBOT_ORIGIN;
+    const gatewaySecret = env?.ROCKBOT_GATEWAY_SECRET;
+    if (!origin || !gatewaySecret) {
+      return unavailable(request, "The private Rockbot gateway is not configured.");
     }
 
     try {
-      return await rockbot.fetch(request);
+      const incomingUrl = new URL(request.url);
+      const originUrl = new URL(incomingUrl.pathname + incomingUrl.search, origin);
+      const headers = new Headers(request.headers);
+      headers.set("x-rockbot-gateway", gatewaySecret);
+      return await fetch(new Request(originUrl, { method: request.method, headers, body: request.body, redirect: "manual" }));
     } catch {
       return unavailable(request, "The private Rockbot runtime is temporarily unreachable.");
     }

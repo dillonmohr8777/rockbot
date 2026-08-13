@@ -1,0 +1,15 @@
+{
+  "$schema": "https://developers.cloudflare.com/schemas/wrangler/config-schema.json",
+  "name": "rockbot-private-origin",
+  "main": "../../remote/cloudflare-origin.mjs",
+  "compatibility_date": "2026-08-13",
+  "workers_dev": true,
+  "preview_urls": false,
+  "vpc_services": [
+    {
+      "binding": "ROCKBOT_LOCAL",
+      "service_id": "019ffd11-7d6b-7501-bbe1-21ac3bdcdbe7",
+      "remote": true
+    }
+  ]
+}
