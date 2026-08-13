@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { AgentDefinition } from "@/data/agents";
-import type { RunEvent, RunReceipt, RunRequest } from "@/lib/contracts";
+import type { PermissionMode, RunEvent, RunReceipt, RunRequest } from "@/lib/contracts";
 import { getProvider } from "@/lib/providers";
 import { routeTask } from "@/lib/orchestrator/router";
 import { assertAllowedWorkingDirectory, assertPromptHasNoLikelySecret, governancePrompt, redact } from "@/lib/orchestrator/safety";
@@ -37,10 +37,25 @@ function event(runId: string, type: RunEvent["type"], values: Omit<RunEvent, "id
   return { id: randomUUID(), runId, type, timestamp: new Date().toISOString(), ...values };
 }
 
-function specialistPrompt(request: RunRequest, agent: AgentDefinition, routeId: string, heartbeat?: SystemHeartbeatEvidence): string {
+type SpecialistOutput = {
+  agent: AgentDefinition;
+  text: string;
+  outputHash: string;
+  boundary: ProviderResult["boundary"];
+  workspaceChanges: NonNullable<ProviderResult["workspaceChanges"]>;
+};
+
+function specialistPrompt(
+  request: RunRequest,
+  agent: AgentDefinition,
+  routeId: string,
+  permissionMode: PermissionMode,
+  heartbeat?: SystemHeartbeatEvidence,
+  priorOutputs: SpecialistOutput[] = [],
+): string {
   const routine = getRoutine(request.routineId);
   return [
-    governancePrompt(request.permissionMode),
+    governancePrompt(permissionMode),
     "",
     `AGENT: ${agent.name}`,
     `PURPOSE: ${agent.purpose}`,
@@ -48,6 +63,9 @@ function specialistPrompt(request: RunRequest, agent: AgentDefinition, routeId: 
     routine ? `ROUTINE: ${routine.id} — ${routine.name}\nTRIGGER: ${routine.trigger}\nSUCCESS EVIDENCE: ${routine.success_evidence}\nAPPROVAL BOUNDARY: ${routine.approval_boundary}` : "ROUTINE: on-demand",
     `WORKING DIRECTORY: ${request.workingDirectory}`,
     heartbeat ? `\n${heartbeatPromptEvidence(heartbeat)}` : "",
+    priorOutputs.length
+      ? `\nMAKER HANDOFF\nThe maker stage has completed. Inspect the current workspace and independently verify the requested result. Do not recreate or edit the artifact.\n${priorOutputs.map(({ agent: priorAgent, text }) => `--- ${priorAgent.name} ---\n${text}`).join("\n\n")}`
+      : "\nSTAGE\nYou are the maker. Complete the bounded task and verify the actual result before reporting it.",
     "",
     "TASK",
     request.prompt,
@@ -75,8 +93,14 @@ export function requiresExternalApproval(prompt: string): boolean {
   return requestsExternalAction && !declaresLocalOnlyBoundary;
 }
 
-export function deriveArtifactState(prompt: string, capturedOutputHashes: string[]): RunReceipt["artifactState"] {
+export function deriveArtifactState(
+  prompt: string,
+  capturedOutputHashes: string[],
+  workspaceChanges: NonNullable<ProviderResult["workspaceChanges"]> = [],
+): RunReceipt["artifactState"] {
   if (!capturedOutputHashes.length) return "none";
+  if (workspaceChanges.some(({ kind }) => kind === "created")) return "created";
+  if (workspaceChanges.length) return "modified";
   const hasPositiveIntent = (pattern: RegExp) => [...prompt.matchAll(new RegExp(pattern.source, "gi"))].some((match) => {
     const prefix = prompt.slice(Math.max(0, (match.index ?? 0) - 120), match.index ?? 0);
     const clause = prefix.split(/[.;\n]/).at(-1) ?? "";
@@ -99,6 +123,12 @@ const verifiedBoundaries = new Set<ProviderResult["boundary"]>([
 
 export function hasVerifiedProviderBoundary(result: ProviderResult | undefined): result is ProviderResult {
   return result?.externalActionAttempted === false && verifiedBoundaries.has(result.boundary);
+}
+
+const blockedOutcomePattern = /\b(?:outcome|status)\s*:\s*(?:\*{0,2})?(?:blocked|failed|unable)|\b(?:could not|couldn't|unable to|not created|not written|write was rejected|filesystem is read-only|workspace is read-only|workspace's read-only|requested work was blocked|requested task was blocked)\b/i;
+
+export function reportsBlockedOutcome(text: string): boolean {
+  return blockedOutcomePattern.test(text);
 }
 
 function blockedNextAction(message: string): string {
@@ -132,7 +162,7 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
     checks.push("three-specialist cap");
     emit(event(runId, "plan_created", { content: plan.rationale, detail: { routeId: plan.routeId, agents: plannedAgentIds, makerChecker: plan.makerChecker } }));
 
-    const outputs = await Promise.all(plan.agents.map(async (agent) => {
+    const runAgent = async (agent: AgentDefinition, permissionMode: PermissionMode, priorOutputs: SpecialistOutput[] = []): Promise<SpecialistOutput> => {
       emit(event(runId, "agent_started", { agentId: agent.id, content: agent.purpose }));
       let text = "";
       const timeoutSeconds = Math.min(request.timeoutSeconds ?? agent.timeoutSeconds, agent.timeoutSeconds);
@@ -140,10 +170,10 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       const context = {
         runId,
         agent,
-        prompt: specialistPrompt(request, agent, plan.routeId, heartbeat),
+        prompt: specialistPrompt(request, agent, plan.routeId, permissionMode, heartbeat, priorOutputs),
         model: request.model,
         workingDirectory: request.workingDirectory,
-        permissionMode: request.permissionMode,
+        permissionMode,
         signal: boundary.signal,
       };
       let providerResult: ProviderResult | undefined;
@@ -174,14 +204,46 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       }
       const outputHash = createHash("sha256").update(redactedText).digest("hex").slice(0, 12);
       emit(event(runId, "agent_completed", { agentId: agent.id, detail: { outputHash } }));
-      return { agent, text: redactedText, outputHash, boundary: providerResult.boundary };
-    }));
+      return {
+        agent,
+        text: redactedText,
+        outputHash,
+        boundary: providerResult.boundary,
+        workspaceChanges: providerResult.workspaceChanges ?? [],
+      };
+    };
+
+    let outputs: SpecialistOutput[];
+    if (plan.makerChecker && plan.agents.length > 1) {
+      const makerOutput = await runAgent(plan.agents[0], request.permissionMode);
+      if (reportsBlockedOutcome(makerOutput.text)) {
+        throw new Error(`${makerOutput.agent.name} reported that the requested work was blocked or not completed.`);
+      }
+      const checkerOutputs = await Promise.all(plan.agents.slice(1).map((agent) => runAgent(agent, "observe", [makerOutput])));
+      outputs = [makerOutput, ...checkerOutputs];
+      checks.push("maker-checker sequence enforced");
+    } else {
+      outputs = await Promise.all(plan.agents.map((agent) => runAgent(agent, request.permissionMode)));
+    }
 
     const capturedOutputHashes = outputs.map(({ agent, outputHash, boundary }) => {
       checks.push(`provider output captured: ${agent.id} sha256:${outputHash}`);
       checks.push(`provider boundary verified: ${agent.id} ${boundary}`);
       return outputHash;
     });
+    const artifacts = outputs
+      .flatMap(({ workspaceChanges }) => workspaceChanges)
+      .map((change) => ({
+        ...change,
+        path: change.path.startsWith(request.workingDirectory)
+          ? change.path.slice(request.workingDirectory.length).replace(/^[/\\]+/, "")
+          : change.path,
+      }))
+      .filter((change, index, all) => all.findIndex((candidate) => candidate.path === change.path && candidate.kind === change.kind) === index);
+    if (artifacts.length) checks.push(`workspace artifacts captured: ${artifacts.length}`);
+    if (outputs.some(({ text }) => reportsBlockedOutcome(text))) {
+      throw new Error("One or more specialists reported that the requested work was blocked or not completed.");
+    }
     if (outputs.length > 1) {
       emit(event(runId, "synthesis_started", { agentId: "marketing-chief", content: "Reconciling specialist evidence." }));
       const timeoutSeconds = Math.min(request.timeoutSeconds ?? 900, 900);
@@ -221,6 +283,9 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       if (!hasVerifiedProviderBoundary(synthesisResult)) {
         throw new Error("Marketing Chief synthesis did not return verified provider-boundary evidence.");
       }
+      if (reportsBlockedOutcome(redactedSynthesis)) {
+        throw new Error("Marketing Chief reported that the requested work was blocked or not completed.");
+      }
       const synthesisHash = createHash("sha256").update(redactedSynthesis).digest("hex").slice(0, 12);
       capturedOutputHashes.push(synthesisHash);
       checks.push(`provider output captured: marketing-chief sha256:${synthesisHash}`);
@@ -230,13 +295,14 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
     checks.push("redaction boundary applied");
     const evidenceVerified = outputs.length > 0 && capturedOutputHashes.length >= outputs.length;
     const approvalRequired = requiresExternalApproval(request.prompt);
-    const artifactState = deriveArtifactState(request.prompt, capturedOutputHashes);
+    const artifactState = deriveArtifactState(request.prompt, capturedOutputHashes, artifacts);
     if (approvalRequired) emit(event(runId, "approval_required", { content: "The requested outcome contains a consequential action. Rockbot completed only the local bounded portion; exact delivery remains approval-gated." }));
     const receipt: RunReceipt = {
       schemaVersion: 2,
       runId,
       outcome: approvalRequired ? "partial" : "complete",
       artifactState,
+      artifacts: artifacts.length ? artifacts : undefined,
       deliveryState: "not_attempted",
       verificationState: evidenceVerified ? "local_verified" : "unverified",
       provider: request.provider,
@@ -250,7 +316,11 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       canonicalQueueWrite: false,
       checks,
       approvalState: approvalRequired ? "required" : "not_required",
-      nextSafestAction: approvalRequired ? "Review the exact local artifact or preview before authorizing any external action." : "Review the captured, hashed provider evidence and choose the next bounded run.",
+      nextSafestAction: approvalRequired
+        ? "Review the exact local artifact or preview before authorizing any external action."
+        : artifacts.length
+          ? `Review the local artifact${artifacts.length === 1 ? "" : "s"}: ${artifacts.map(({ path }) => path).join(", ")}.`
+          : "Review the captured, hashed provider evidence and choose the next bounded run.",
       startedAt,
       completedAt: new Date().toISOString(),
     };

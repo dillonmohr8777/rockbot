@@ -29,6 +29,10 @@ export interface ProviderResult {
   text: string;
   externalActionAttempted: false;
   boundary: ProviderBoundary;
+  workspaceChanges?: Array<{
+    path: string;
+    kind: "created" | "modified" | "deleted";
+  }>;
 }
 
 export interface ProviderAdapter {

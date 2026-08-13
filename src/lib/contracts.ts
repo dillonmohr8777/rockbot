@@ -68,7 +68,11 @@ export interface RunReceipt {
   schemaVersion: 2;
   runId: string;
   outcome: "complete" | "partial" | "blocked";
-  artifactState: "none" | "drafted" | "staged";
+  artifactState: "none" | "drafted" | "staged" | "created" | "modified";
+  artifacts?: Array<{
+    path: string;
+    kind: "created" | "modified" | "deleted";
+  }>;
   deliveryState: "not_attempted" | "deployed" | "sent";
   verificationState: "unverified" | "local_verified" | "live_verified";
   provider: ProviderId;

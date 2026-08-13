@@ -1,5 +1,6 @@
 import { RunRequestSchema, type RunEvent } from "@/lib/contracts";
 import { executeRun } from "@/lib/orchestrator/execute";
+import { registerActiveRun, unregisterActiveRun } from "@/lib/orchestrator/active-runs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,17 +14,19 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
   const runController = new AbortController();
   let streamClosed = false;
-  const abortRun = () => runController.abort();
-  request.signal.addEventListener("abort", abortRun, { once: true });
+  let activeRunId: string | undefined;
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const emit = (event: RunEvent) => {
+        if (event.type === "run_started") {
+          activeRunId = event.runId;
+          registerActiveRun(event.runId, runController);
+        }
         if (streamClosed) return;
         try {
           controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
         } catch {
           streamClosed = true;
-          runController.abort();
         }
       };
       void executeRun(parsed.data, emit, runController.signal)
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
           emit(event);
         })
         .finally(() => {
-          request.signal.removeEventListener("abort", abortRun);
+          if (activeRunId) unregisterActiveRun(activeRunId);
           if (streamClosed) return;
           streamClosed = true;
           try {
@@ -50,8 +53,6 @@ export async function POST(request: Request) {
     },
     cancel() {
       streamClosed = true;
-      request.signal.removeEventListener("abort", abortRun);
-      runController.abort();
     },
   });
 

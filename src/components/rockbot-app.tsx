@@ -121,6 +121,10 @@ function cadenceLabel(cadence: RoutineDefinition["cadence"]) {
   return cadence === "weekly-twice" ? "Twice weekly" : `${cadence[0].toUpperCase()}${cadence.slice(1)}`;
 }
 
+function pause(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
 function StatusDot({ state }: { state: ProviderHealth["state"] }) {
   return <span className={`status-dot status-dot--${state}`} aria-hidden="true" />;
 }
@@ -262,6 +266,7 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("runtime");
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const serverRunRef = useRef<string | null>(null);
   const promptRef = useRef<HTMLTextAreaElement | null>(null);
   const threadEndRef = useRef<HTMLDivElement | null>(null);
   const sidebarRef = useRef<HTMLElement | null>(null);
@@ -392,6 +397,7 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
   }, [initialRoutines, routineSearch]);
 
   const updateRunFromEvent = useCallback((localId: string, event: RunEvent) => {
+    if (event.type === "run_started") serverRunRef.current = event.runId;
     setRuns((current) => current.map((run) => {
       if (run.localId !== localId) return run;
       if (event.type === "run_started") return { ...run, runId: event.runId, phase: "working" };
@@ -430,6 +436,35 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     }));
   }, []);
 
+  const recoverRunReceipt = useCallback(async (localId: string, runId: string) => {
+    setRuns((current) => current.map((run) => run.localId === localId
+      ? { ...run, activities: [...run.activities.slice(-7), "Phone connection dropped. The computer is still working; reconnecting to the receipt..."] }
+      : run));
+    const deadline = Date.now() + 60 * 60 * 1_000;
+    while (Date.now() < deadline) {
+      try {
+        const response = await fetch(`/api/runs/${encodeURIComponent(runId)}`, { cache: "no-store" });
+        if (response.ok) {
+          const payload = await response.json() as { receipt?: RunReceipt };
+          if (payload.receipt) {
+            const receipt = payload.receipt;
+            setRuns((current) => current.map((run) => run.localId === localId
+              ? { ...run, receipt, phase: receipt.outcome, error: undefined }
+              : run));
+            return;
+          }
+        } else if (response.status >= 400 && response.status < 500 && response.status !== 404) {
+          throw new Error(`Run recovery was rejected with HTTP ${response.status}.`);
+        }
+      } catch (error) {
+        if (error instanceof Error && /recovery was rejected/.test(error.message)) throw error;
+        // A second network interruption is expected on mobile; keep polling the durable receipt.
+      }
+      await pause(2_000);
+    }
+    throw new Error("The run is still working, but the phone could not recover its receipt within one hour.");
+  }, []);
+
   const executePrompt = useCallback(async (override?: string) => {
     const task = (override ?? prompt).trim();
     if (!task || activeRunId) return;
@@ -462,6 +497,16 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     setSidebarOpen(false);
     const controller = new AbortController();
     abortRef.current = controller;
+    serverRunRef.current = null;
+    let serverRunId: string | undefined;
+    let receivedReceipt = false;
+    let recoveryAttempted = false;
+
+    const handleEvent = (event: RunEvent) => {
+      if (event.type === "run_started") serverRunId = event.runId;
+      if (event.type === "receipt") receivedReceipt = true;
+      updateRunFromEvent(localId, event);
+    };
 
     try {
       const response = await fetch("/api/execute", {
@@ -494,20 +539,49 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
         buffer = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.trim()) continue;
-          updateRunFromEvent(localId, JSON.parse(line) as RunEvent);
+          handleEvent(JSON.parse(line) as RunEvent);
         }
       }
-      if (buffer.trim()) updateRunFromEvent(localId, JSON.parse(buffer) as RunEvent);
+      if (buffer.trim()) handleEvent(JSON.parse(buffer) as RunEvent);
+      if (!receivedReceipt && serverRunId && !controller.signal.aborted) {
+        recoveryAttempted = true;
+        await recoverRunReceipt(localId, serverRunId);
+        receivedReceipt = true;
+      }
     } catch (error) {
       const aborted = error instanceof DOMException && error.name === "AbortError";
-      setRuns((current) => current.map((item) => item.localId === localId
-        ? { ...item, phase: "failed", error: aborted ? "Run stopped locally. No external action was attempted." : error instanceof Error ? error.message : "Rockbot run failed." }
-        : item));
+      if (!aborted && serverRunId && !receivedReceipt && !recoveryAttempted) {
+        try {
+          await recoverRunReceipt(localId, serverRunId);
+          receivedReceipt = true;
+        } catch (recoveryError) {
+          setRuns((current) => current.map((item) => item.localId === localId
+            ? { ...item, phase: "failed", error: recoveryError instanceof Error ? recoveryError.message : "Rockbot could not recover the run receipt." }
+            : item));
+        }
+      } else if (!receivedReceipt) {
+        setRuns((current) => current.map((item) => item.localId === localId
+          ? { ...item, phase: "failed", error: aborted ? "Run stopped. No external action was attempted." : error instanceof Error ? error.message : "Rockbot run failed." }
+          : item));
+      }
     } finally {
       abortRef.current = null;
+      serverRunRef.current = null;
       setActiveRunId(null);
     }
-  }, [activeRunId, permissionMode, prompt, providers, selectedAgentId, selectedModel, selectedProvider, selectedRoutineId, teamMode, updateRunFromEvent, workingDirectory]);
+  }, [activeRunId, permissionMode, prompt, providers, recoverRunReceipt, selectedAgentId, selectedModel, selectedProvider, selectedRoutineId, teamMode, updateRunFromEvent, workingDirectory]);
+
+  const stopActiveRun = useCallback(async () => {
+    const runId = serverRunRef.current;
+    if (runId) {
+      try {
+        await fetch(`/api/runs/${encodeURIComponent(runId)}`, { method: "DELETE" });
+      } catch {
+        // The local stream abort below still stops rendering; the server timeout remains the fallback.
+      }
+    }
+    abortRef.current?.abort();
+  }, []);
 
   const chooseProvider = (provider: ProviderId, model: string) => {
     setSelectedProvider(provider);
@@ -711,7 +785,7 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
                 <span className="team-indicator"><UsersRound size={14} /> {teamMode ? "Team routing" : "Single agent"}</span>
               </div>
               {activeRunId ? (
-                <button className="stop-button" type="button" onClick={() => abortRef.current?.abort()} aria-label="Stop run"><CircleStop size={18} /></button>
+                <button className="stop-button" type="button" onClick={() => void stopActiveRun()} aria-label="Stop run"><CircleStop size={18} /></button>
               ) : (
                 <button className="send-button" type="button" onClick={() => void executePrompt()} disabled={!canRun} aria-label="Run task" data-testid="send-button"><Send size={17} /></button>
               )}
@@ -919,6 +993,9 @@ function RunExchange({ run, agents }: { run: UiRun; agents: AgentDefinition[] })
               <span>{run.receipt.checks.length} checks</span>
               <span className="receipt-safe">redacted · external action: none</span>
             </div>
+            {run.receipt.artifacts?.length ? (
+              <p><strong>Workspace files:</strong> {run.receipt.artifacts.map((artifact) => `${artifact.path} (${artifact.kind})`).join(", ")}</p>
+            ) : null}
             <p><strong>{run.receipt.approvalState === "required" ? "Approval required." : "No approval required."}</strong> {run.receipt.nextSafestAction}</p>
           </div>
         )}
