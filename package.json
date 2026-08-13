@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3434",
     "build": "next build",
+    "build:remote": "powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/Build-RockbotRemote.ps1",
     "start": "next start --hostname 127.0.0.1 --port 3434",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
