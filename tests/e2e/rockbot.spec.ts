@@ -46,10 +46,10 @@ test.describe("Rockbot command center", () => {
     await expect(modelDialog.locator(":focus")).toHaveCount(1);
     await page.keyboard.press("Tab");
     await expect(closeModelDialog).toBeFocused();
-    await page.locator(".provider-option__button", { hasText: "Rockbot Demo" }).click();
+    await page.locator(".provider-option__button", { hasText: "Simulation" }).click();
     await closeModelDialog.click();
     await expect(page.getByTestId("model-trigger")).toBeFocused();
-    await expect(page.getByTestId("model-trigger")).toContainText("Rockbot Demo");
+    await expect(page.getByTestId("model-trigger")).toContainText("Simulation");
 
     await page.getByTestId("composer-input").fill("Run the synthetic Protocol 54 canary and return its evidence.");
     await page.getByTestId("send-button").click();
@@ -58,6 +58,8 @@ test.describe("Rockbot command center", () => {
     await expect(page.locator(".receipt-outcome")).toContainText("complete");
     await expect(page.getByRole("status").filter({ has: page.locator(".receipt-outcome") })).toContainText("delivery: not attempted");
     await expect(page.getByRole("status").filter({ has: page.locator(".receipt-outcome") })).toContainText("redacted");
+    await page.reload();
+    await expect(page.getByTestId("model-trigger")).toContainText("Codex");
     expect(consoleErrors).toEqual([]);
   });
 
@@ -72,7 +74,7 @@ test.describe("Rockbot command center", () => {
     await expect(page.getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
 
     await page.getByTestId("model-trigger").click();
-    await page.locator(".provider-option__button", { hasText: "Rockbot Demo" }).click();
+    await page.locator(".provider-option__button", { hasText: "Simulation" }).click();
     await page.getByRole("button", { name: "Close model picker" }).click();
     await page.getByTestId("composer-input").fill("Draft and send a client update.");
     await page.getByTestId("send-button").click();

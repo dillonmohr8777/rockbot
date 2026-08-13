@@ -25,9 +25,23 @@ export const codexAdapter: ProviderAdapter = {
   async *execute(context) {
     const command = resolveCommand("codex");
     if (!command) throw new Error("Codex CLI is unavailable.");
-    const args = ["exec", "--json", "--skip-git-repo-check", "--sandbox", context.permissionMode === "workspace" ? "workspace-write" : "read-only"];
+    const args = [
+      "exec",
+      "--json",
+      "--ephemeral",
+      "--ignore-user-config",
+      "--skip-git-repo-check",
+      "--sandbox",
+      context.permissionMode === "workspace" ? "workspace-write" : "read-only",
+    ];
     if (context.model && context.model !== "default") args.push("--model", context.model);
     args.push("-");
-    return yield* runJsonLineCommand(command, args, context, context.prompt);
+    return yield* runJsonLineCommand(
+      command,
+      args,
+      context,
+      context.prompt,
+      context.permissionMode === "workspace" ? "codex_workspace_sandbox" : "codex_read_only_sandbox",
+    );
   },
 };

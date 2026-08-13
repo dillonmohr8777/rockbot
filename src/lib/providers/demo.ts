@@ -7,7 +7,7 @@ export const demoAdapter: ProviderAdapter = {
   async health() {
     return {
       id: "demo",
-      label: "Rockbot Demo",
+      label: "Simulation",
       state: "ready",
       installed: true,
       detail: "Deterministic synthetic fixture. No model or live provider is called.",
@@ -30,6 +30,6 @@ export const demoAdapter: ProviderAdapter = {
       text += `${line}\n\n`;
       yield { type: "delta", content: `${line}\n\n` };
     }
-    return { text: text.trim() };
+    return { text: text.trim(), externalActionAttempted: false, boundary: "synthetic_fixture" };
   },
 };

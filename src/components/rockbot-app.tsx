@@ -98,7 +98,7 @@ const providerFallbacks: ProviderHealth[] = [
   { id: "claude", label: "Claude", state: "offline", installed: true, detail: "Checking local session…", models: [{ id: "default", label: "Account default" }], capabilities: ["chat", "reasoning", "workspace"] },
   { id: "grok", label: "Grok", state: "offline", installed: true, detail: "Checking local session…", models: [{ id: "default", label: "Account default" }], capabilities: ["chat", "reasoning"] },
   { id: "ollama", label: "Local models", state: "offline", installed: true, detail: "Checking local service…", models: [], capabilities: ["chat", "reasoning", "local"] },
-  { id: "demo", label: "Rockbot Demo", state: "ready", installed: true, detail: "Deterministic local fixture.", models: [{ id: "protocol-54-fixture", label: "Protocol 54 fixture", local: true }], capabilities: ["chat", "reasoning", "local"] },
+  { id: "demo", label: "Simulation", state: "ready", installed: true, detail: "Synthetic fixture. No real model is called.", models: [{ id: "protocol-54-fixture", label: "Protocol 54 fixture", local: true }], capabilities: ["chat", "reasoning", "local"] },
 ];
 
 function makeLocalId() {
@@ -107,7 +107,7 @@ function makeLocalId() {
 
 function providerStateLabel(provider?: ProviderHealth) {
   if (!provider) return "Checking";
-  if (provider.state === "ready") return provider.id === "demo" ? "Ready" : "Connected";
+  if (provider.state === "ready") return provider.id === "demo" ? "No real model" : "Connected";
   if (provider.state === "needs_auth") return "Sign-in needed";
   if (provider.state === "unavailable") return "Not installed";
   return "Offline";
@@ -216,7 +216,7 @@ function ModelPicker({
               );
             })}
           </div>
-          <p className="model-menu__foot">Prompts travel through stdin or the provider’s local protocol. Secrets are blocked before transmission.</p>
+          <p className="model-menu__foot">Simulation is for canaries only. Real tasks use Codex, Claude, Grok, or a local model. Secrets are blocked before transmission.</p>
         </div>
         </>
       )}
@@ -296,8 +296,13 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
   }, []);
 
   useEffect(() => {
-    const savedProvider = window.localStorage.getItem("rockbot.provider") as ProviderId | null;
-    const savedModel = window.localStorage.getItem("rockbot.model");
+    const storedProvider = window.localStorage.getItem("rockbot.provider") as ProviderId | null;
+    const savedProvider = storedProvider === "demo" ? null : storedProvider;
+    const savedModel = savedProvider ? window.localStorage.getItem("rockbot.model") : null;
+    if (storedProvider === "demo") {
+      window.localStorage.removeItem("rockbot.provider");
+      window.localStorage.removeItem("rockbot.model");
+    }
     if (savedProvider && ["demo", "codex", "claude", "grok", "ollama"].includes(savedProvider)) setSelectedProvider(savedProvider);
     if (savedModel) setSelectedModel(savedModel);
 
@@ -507,8 +512,13 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
   const chooseProvider = (provider: ProviderId, model: string) => {
     setSelectedProvider(provider);
     setSelectedModel(model);
-    window.localStorage.setItem("rockbot.provider", provider);
-    window.localStorage.setItem("rockbot.model", model);
+    if (provider === "demo") {
+      window.localStorage.removeItem("rockbot.provider");
+      window.localStorage.removeItem("rockbot.model");
+    } else {
+      window.localStorage.setItem("rockbot.provider", provider);
+      window.localStorage.setItem("rockbot.model", model);
+    }
   };
 
   const selectAgent = (id: string) => {

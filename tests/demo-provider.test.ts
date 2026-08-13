@@ -16,6 +16,7 @@ describe("deterministic demo provider", () => {
       const next = await stream.next();
       if (next.done) {
         expect(next.value.text).toContain("54-routine manifest");
+        expect(next.value).toMatchObject({ externalActionAttempted: false, boundary: "synthetic_fixture" });
         break;
       }
       body += next.value.content;

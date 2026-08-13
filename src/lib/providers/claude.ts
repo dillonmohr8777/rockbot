@@ -32,6 +32,12 @@ export const claudeAdapter: ProviderAdapter = {
     if (!command) throw new Error("Claude Code is unavailable.");
     const args = ["-p", "--verbose", "--output-format", "stream-json", "--no-session-persistence", "--permission-mode", context.permissionMode === "workspace" ? "acceptEdits" : "plan"];
     if (context.model && context.model !== "default") args.push("--model", context.model);
-    return yield* runJsonLineCommand(command, args, context, context.prompt);
+    return yield* runJsonLineCommand(
+      command,
+      args,
+      context,
+      context.prompt,
+      context.permissionMode === "workspace" ? "claude_accept_edits_mode" : "claude_plan_mode",
+    );
   },
 };

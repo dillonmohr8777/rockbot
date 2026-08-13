@@ -2,7 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
-import type { ProviderChunk, ProviderContext, ProviderResult } from "@/lib/providers/types";
+import type { ProviderBoundary, ProviderChunk, ProviderContext, ProviderResult } from "@/lib/providers/types";
 import { redact } from "@/lib/orchestrator/safety";
 
 export function resolveCommand(name: string): string | undefined {
@@ -90,6 +90,7 @@ export async function* runJsonLineCommand(
   args: string[],
   context: ProviderContext,
   stdinText: string,
+  boundary: ProviderBoundary,
 ): AsyncGenerator<ProviderChunk, ProviderResult> {
   const child = spawn(command, args, {
     cwd: context.workingDirectory,
@@ -141,5 +142,5 @@ export async function* runJsonLineCommand(
     const errorText = redact(Buffer.concat(stderr).toString("utf8")).trim().slice(-2_000);
     throw new Error(terminalError || errorText || `Provider process exited with code ${exitCode}.`);
   }
-  return { text: finalText.trim() };
+  return { text: finalText.trim(), externalActionAttempted: false, boundary };
 }

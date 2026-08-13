@@ -63,6 +63,6 @@ export const ollamaAdapter: ProviderAdapter = {
         }
       }
     }
-    return { text: text.trim() };
+    return { text: text.trim(), externalActionAttempted: false, boundary: "ollama_chat_no_tools" };
   },
 };

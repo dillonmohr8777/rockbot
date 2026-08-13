@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveArtifactState, hasRequiredProviderAttestation, requiresExternalApproval } from "@/lib/orchestrator/execute";
+import { deriveArtifactState, hasVerifiedProviderBoundary, requiresExternalApproval } from "@/lib/orchestrator/execute";
 
 describe("receipt semantics", () => {
   it("treats a draft-only request as a completed local artifact boundary", () => {
@@ -26,9 +26,8 @@ describe("receipt semantics", () => {
     expect(deriveArtifactState("Never prepare a preview or staging artifact.", ["evidence-hash"])).toBe("none");
   });
 
-  it("requires the exact external-action attestation as its own output line", () => {
-    expect(hasRequiredProviderAttestation("Outcome: complete.\nexternal action attempted = none")).toBe(true);
-    expect(hasRequiredProviderAttestation("Stop if external action attempted = deploy")).toBe(false);
-    expect(hasRequiredProviderAttestation("No external actions were attempted.")).toBe(false);
+  it("uses enforced adapter boundary evidence instead of brittle model wording", () => {
+    expect(hasVerifiedProviderBoundary({ text: "No exact footer required.", externalActionAttempted: false, boundary: "codex_read_only_sandbox" })).toBe(true);
+    expect(hasVerifiedProviderBoundary(undefined)).toBe(false);
   });
 });

@@ -16,8 +16,19 @@ export interface ProviderChunk {
   content: string;
 }
 
+export type ProviderBoundary =
+  | "synthetic_fixture"
+  | "codex_read_only_sandbox"
+  | "codex_workspace_sandbox"
+  | "claude_plan_mode"
+  | "claude_accept_edits_mode"
+  | "grok_plan_no_tools"
+  | "ollama_chat_no_tools";
+
 export interface ProviderResult {
   text: string;
+  externalActionAttempted: false;
+  boundary: ProviderBoundary;
 }
 
 export interface ProviderAdapter {

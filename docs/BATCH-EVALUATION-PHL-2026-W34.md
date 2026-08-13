@@ -87,7 +87,7 @@ The sample must score brand fidelity, distinctiveness, hierarchy, imagery releva
 - Negated instructions such as “do not write” no longer create a false drafted-artifact receipt.
 - API callers can set a bounded server-side timeout, capped by the selected agent’s own budget.
 - Timeouts persist a blocked, unverified receipt.
-- Provider and synthesis output must contain the exact external-action attestation or the run fails closed.
+- Provider and synthesis runs must return adapter-enforced boundary evidence. The model's wording is display content, not the security control.
 
 ## Model-routing recommendation
 

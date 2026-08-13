@@ -6,6 +6,8 @@ import { routeTask } from "@/lib/orchestrator/router";
 import { assertAllowedWorkingDirectory, assertPromptHasNoLikelySecret, governancePrompt, redact } from "@/lib/orchestrator/safety";
 import { getRoutine } from "@/lib/routines";
 import { saveReceipt } from "@/lib/orchestrator/run-store";
+import type { ProviderResult } from "@/lib/providers/types";
+import { captureSystemHeartbeat, heartbeatPromptEvidence, isSystemHeartbeatRequest, type SystemHeartbeatEvidence } from "@/lib/orchestrator/heartbeat";
 
 type Emit = (event: RunEvent) => void;
 
@@ -35,7 +37,7 @@ function event(runId: string, type: RunEvent["type"], values: Omit<RunEvent, "id
   return { id: randomUUID(), runId, type, timestamp: new Date().toISOString(), ...values };
 }
 
-function specialistPrompt(request: RunRequest, agent: AgentDefinition, routeId: string): string {
+function specialistPrompt(request: RunRequest, agent: AgentDefinition, routeId: string, heartbeat?: SystemHeartbeatEvidence): string {
   const routine = getRoutine(request.routineId);
   return [
     governancePrompt(request.permissionMode),
@@ -45,13 +47,14 @@ function specialistPrompt(request: RunRequest, agent: AgentDefinition, routeId: 
     `ROUTE: ${routeId}`,
     routine ? `ROUTINE: ${routine.id} — ${routine.name}\nTRIGGER: ${routine.trigger}\nSUCCESS EVIDENCE: ${routine.success_evidence}\nAPPROVAL BOUNDARY: ${routine.approval_boundary}` : "ROUTINE: on-demand",
     `WORKING DIRECTORY: ${request.workingDirectory}`,
+    heartbeat ? `\n${heartbeatPromptEvidence(heartbeat)}` : "",
     "",
     "TASK",
     request.prompt,
   ].join("\n");
 }
 
-function synthesisPrompt(request: RunRequest, outputs: Array<{ agent: AgentDefinition; text: string }>): string {
+function synthesisPrompt(request: RunRequest, outputs: Array<{ agent: AgentDefinition; text: string }>, heartbeat?: SystemHeartbeatEvidence): string {
   return [
     governancePrompt("observe"),
     "",
@@ -60,6 +63,7 @@ function synthesisPrompt(request: RunRequest, outputs: Array<{ agent: AgentDefin
     "Return one concise outcome, evidence, risks, approval state, and next safest action.",
     "",
     `ORIGINAL TASK: ${request.prompt}`,
+    heartbeat ? heartbeatPromptEvidence(heartbeat) : "",
     "",
     ...outputs.map(({ agent, text }) => `--- ${agent.name} ---\n${text}`),
   ].join("\n\n");
@@ -83,8 +87,18 @@ export function deriveArtifactState(prompt: string, capturedOutputHashes: string
   return "none";
 }
 
-export function hasRequiredProviderAttestation(output: string): boolean {
-  return /(?:^|\n)\s*external action attempted\s*=\s*none\s*(?:$|\n)/im.test(output);
+const verifiedBoundaries = new Set<ProviderResult["boundary"]>([
+  "synthetic_fixture",
+  "codex_read_only_sandbox",
+  "codex_workspace_sandbox",
+  "claude_plan_mode",
+  "claude_accept_edits_mode",
+  "grok_plan_no_tools",
+  "ollama_chat_no_tools",
+]);
+
+export function hasVerifiedProviderBoundary(result: ProviderResult | undefined): result is ProviderResult {
+  return result?.externalActionAttempted === false && verifiedBoundaries.has(result.boundary);
 }
 
 function blockedNextAction(message: string): string {
@@ -105,6 +119,12 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
     checks.push("working directory allowlist");
     assertPromptHasNoLikelySecret(request.prompt);
     checks.push("prompt secret scan");
+    let heartbeat: SystemHeartbeatEvidence | undefined;
+    if (isSystemHeartbeatRequest(request.prompt)) {
+      emit(event(runId, "agent_activity", { content: "Running the trusted local system heartbeat." }));
+      heartbeat = await captureSystemHeartbeat();
+      checks.push(`system heartbeat captured: ${heartbeat.manifest.status} sha256:${heartbeat.outputHash}`);
+    }
     const plan = routeTask(request.prompt, request.agentId, request.teamMode);
     const provider = getProvider(request.provider);
     plannedAgentIds = plan.agents.map((agent) => agent.id);
@@ -120,18 +140,20 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       const context = {
         runId,
         agent,
-        prompt: specialistPrompt(request, agent, plan.routeId),
+        prompt: specialistPrompt(request, agent, plan.routeId, heartbeat),
         model: request.model,
         workingDirectory: request.workingDirectory,
         permissionMode: request.permissionMode,
         signal: boundary.signal,
       };
+      let providerResult: ProviderResult | undefined;
       try {
         const iterator = provider.execute(context);
         while (true) {
           const next = await iterator.next();
           if (next.done) {
-            if (next.value?.text) text = next.value.text;
+            providerResult = next.value;
+            if (providerResult?.text) text = providerResult.text;
             break;
           }
           const chunk = next.value;
@@ -147,16 +169,17 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       }
       const redactedText = redact(text).trim();
       if (!redactedText) throw new Error(`${agent.name} returned no usable output evidence.`);
-      if (!hasRequiredProviderAttestation(redactedText)) {
-        throw new Error(`${agent.name} returned output without the required external-action attestation.`);
+      if (!hasVerifiedProviderBoundary(providerResult)) {
+        throw new Error(`${agent.name} did not return verified provider-boundary evidence.`);
       }
       const outputHash = createHash("sha256").update(redactedText).digest("hex").slice(0, 12);
       emit(event(runId, "agent_completed", { agentId: agent.id, detail: { outputHash } }));
-      return { agent, text: redactedText, outputHash };
+      return { agent, text: redactedText, outputHash, boundary: providerResult.boundary };
     }));
 
-    const capturedOutputHashes = outputs.map(({ agent, outputHash }) => {
+    const capturedOutputHashes = outputs.map(({ agent, outputHash, boundary }) => {
       checks.push(`provider output captured: ${agent.id} sha256:${outputHash}`);
+      checks.push(`provider boundary verified: ${agent.id} ${boundary}`);
       return outputHash;
     });
     if (outputs.length > 1) {
@@ -166,19 +189,21 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       const synthesisContext = {
         runId,
         agent: { ...plan.agents[0], id: "marketing-chief", name: "Marketing Chief", purpose: "Final synthesis" },
-        prompt: synthesisPrompt(request, outputs),
+        prompt: synthesisPrompt(request, outputs, heartbeat),
         model: request.model,
         workingDirectory: request.workingDirectory,
         permissionMode: "observe" as const,
         signal: boundary.signal,
       };
       let synthesisText = "";
+      let synthesisResult: ProviderResult | undefined;
       try {
         const synthesis = provider.execute(synthesisContext);
         while (true) {
           const next = await synthesis.next();
           if (next.done) {
-            if (next.value?.text) synthesisText = next.value.text;
+            synthesisResult = next.value;
+            if (synthesisResult?.text) synthesisText = synthesisResult.text;
             break;
           }
           if (next.value.type === "delta") {
@@ -193,12 +218,13 @@ export async function executeRun(request: RunRequest, emit: Emit, signal?: Abort
       }
       const redactedSynthesis = redact(synthesisText).trim();
       if (!redactedSynthesis) throw new Error("Marketing Chief synthesis returned no usable output evidence.");
-      if (!hasRequiredProviderAttestation(redactedSynthesis)) {
-        throw new Error("Marketing Chief synthesis returned output without the required external-action attestation.");
+      if (!hasVerifiedProviderBoundary(synthesisResult)) {
+        throw new Error("Marketing Chief synthesis did not return verified provider-boundary evidence.");
       }
       const synthesisHash = createHash("sha256").update(redactedSynthesis).digest("hex").slice(0, 12);
       capturedOutputHashes.push(synthesisHash);
       checks.push(`provider output captured: marketing-chief sha256:${synthesisHash}`);
+      checks.push(`provider boundary verified: marketing-chief ${synthesisResult.boundary}`);
     }
 
     checks.push("redaction boundary applied");

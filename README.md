@@ -49,11 +49,12 @@ from the real local runtime every time the app opens.
 | Claude | Claude Code stream JSON over stdin | plan mode |
 | Grok | Grok Build ACP over stdio | plan mode, no memory |
 | Local models | Ollama streaming chat API | local inference |
-| Rockbot Demo | deterministic in-process fixture | synthetic only |
+| Simulation | deterministic in-process fixture | synthetic only |
 
 No prompt secret is placed in a command argument. Likely credentials are
 blocked before provider transmission, and normalized output is redacted before
-it reaches receipts.
+it reaches receipts. Completion uses adapter-enforced boundary evidence rather
+than depending on a model to repeat one exact sentence.
 
 ## Knowledge synchronization
 
@@ -74,6 +75,10 @@ receipts, and product/design truth, then writes one prioritized local manifest
 to `runtime/heartbeat-latest.json`. The paired
 `config/workflows/bounded-revenue-loop.json` preserves the schedule, evidence,
 maker, checker, bounded-repair, and canonical-handoff proof loop.
+
+When a Rockbot task asks for the system heartbeat, the trusted local harness
+runs this fixed check once before model routing. Models receive the same hashed
+manifest to interpret and do not rerun the writable check inside their sandbox.
 
 ## Verification
 

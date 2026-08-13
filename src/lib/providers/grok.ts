@@ -119,6 +119,6 @@ export const grokAdapter: ProviderAdapter = {
 
     for await (const chunk of queue) yield chunk;
     context.signal?.removeEventListener("abort", abort);
-    return { text: fullText.trim() };
+    return { text: fullText.trim(), externalActionAttempted: false, boundary: "grok_plan_no_tools" };
   },
 };
