@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "name": "rockbot-operating-team",
+  "pattern": "orchestrator",
+  "orchestrator": {
+    "agent": "marketing-chief",
+    "planning": "dynamic",
+    "canonical_queue_writer": true,
+    "final_verifier": true
+  },
+  "specialists": [
+    "client-context-router",
+    "research-scout",
+    "communications-intake-analyst",
+    "paid-media-auditor",
+    "reporting-analytics-analyst",
+    "web-product-builder",
+    "design-art-direction-critic",
+    "brand-voice-content-studio",
+    "seo-aeo-geo-strategist",
+    "cro-experiment-planner",
+    "crm-revenue-ops-analyst",
+    "automation-reliability-scout",
+    "knowledge-obsidian-curator",
+    "independent-qa-release-critic",
+    "delivery-evidence-auditor"
+  ],
+  "execution": {
+    "dependency_mode": "dag",
+    "max_parallel": 3,
+    "completion_policy": "all_required",
+    "max_evaluator_loops": 2,
+    "recursive_delegation": false
+  },
+  "handoff_required_fields": [
+    "workflow_id",
+    "step_id",
+    "agent",
+    "task",
+    "client_id",
+    "canonical_route",
+    "constraints",
+    "source_locators",
+    "upstream_artifacts",
+    "budget_tokens",
+    "timeout_seconds",
+    "acceptance_checks",
+    "evidence_paths",
+    "risks",
+    "approval_state"
+  ],
+  "outcome_states": [
+    "complete",
+    "partial",
+    "blocked",
+    "drafted",
+    "staged",
+    "deployed",
+    "sent",
+    "verified"
+  ],
+  "delivery_gate": "marketing-chief",
+  "external_actions_default": "denied"
+}

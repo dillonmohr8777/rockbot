@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "name": "rockbot-system-heartbeat",
+  "purpose": "Turn governance drift and stale evidence into one prioritized local action manifest.",
+  "checks": [
+    "source manifest freshness and hash parity",
+    "duplicate or shadow routine and agent definitions",
+    "missing operating-team registry entries",
+    "dishonest approval or canonical authority tiers",
+    "workflow concurrency and evaluator-loop limits",
+    "receipt freshness, schema, verification, and external-action truth",
+    "product and design authority presence"
+  ],
+  "critical_failures": [
+    "source hash conflict",
+    "duplicate identity",
+    "missing canonical orchestrator",
+    "external actions not denied by default",
+    "specialist cap above three",
+    "evaluator loops above two",
+    "receipt claiming an external action that Rockbot cannot perform"
+  ],
+  "output": "runtime/heartbeat-latest.json",
+  "external_actions": "denied",
+  "canonical_queue_write": false
+}

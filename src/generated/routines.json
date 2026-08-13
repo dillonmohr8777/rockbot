@@ -1,0 +1,1013 @@
+{
+  "schema_version": "1.0",
+  "prepared_at": "2026-08-11",
+  "source": {
+    "relative_path": "recorded-training\\2026-08-11-grok-bot-routine-recording-manifest.json",
+    "sha256": "b096d85fbb5b25c52d7d80cea21b45c28908ec92d1797fc9da228b23af5d9fdb"
+  },
+  "policy": {
+    "privacy": "redacted",
+    "allowed_demo_data": [
+      "synthetic inbox messages",
+      "redacted source locators",
+      "local fixtures",
+      "public brand assets",
+      "non-secret repository paths",
+      "aggregate or synthetic metrics"
+    ],
+    "never_record": [
+      "password managers or passwords",
+      "MFA, passkey, recovery, or one-time-code screens",
+      "payment or card data",
+      "API keys, tokens, cookies, or secret environment values",
+      "raw private email, Slack, meeting, or client records",
+      "unrelated foreground or entertainment tabs"
+    ],
+    "external_action_rule": "Training stops at preview unless Dillon separately approves the exact send, post, publish, spend, deploy, or account change.",
+    "canonical_write_rule": "Grok Bots return artifacts, evidence, and proposals. Codex acting as Marketing Chief remains the only canonical queue writer and final completion authority.",
+    "recording_finish_line": "Every recording ends with route, artifact paths, sources and freshness, checks, assumptions, privacy state, approval state, external action attempted, and next safest action."
+  },
+  "cadence": {
+    "daily": 26,
+    "event": 12,
+    "weekly": 9,
+    "weekly-twice": 2,
+    "monthly": 5
+  },
+  "routines": [
+    {
+      "id": "D01",
+      "cadence": "daily",
+      "name": "Sync and test the shared agent vault",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "Start of the first marketing, client, design, content, reporting, or website task of the day",
+      "demo_input": "The real agent-vault path with no secret data",
+      "steps": [
+        "Run Sync-AgentVault.ps1",
+        "Run Test-AgentVault.ps1",
+        "Read AGENTS.md and the exact project route",
+        "Report queue revision and source health"
+      ],
+      "output": "Vault health receipt",
+      "approval_boundary": "Read and generated-projection operations only",
+      "success_evidence": "Both scripts pass and exact source locations are named"
+    },
+    {
+      "id": "D02",
+      "cadence": "daily",
+      "name": "Validate access and session continuity",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "Before an account-dependent task",
+      "demo_input": "Sanitized Access Broker metadata and synthetic expired-session states",
+      "steps": [
+        "Validate the access registry",
+        "Resolve the exact service, client, and account",
+        "Prefer an existing authorized session or OAuth route",
+        "Escalate only MFA, CAPTCHA, passkey, recovery, or new consent"
+      ],
+      "output": "Account-route and capability receipt",
+      "approval_boundary": "Never reveal or capture a credential value",
+      "success_evidence": "Exact account and allowed capabilities are confirmed without secret exposure"
+    },
+    {
+      "id": "D03",
+      "cadence": "daily",
+      "name": "Review overnight automations and watchdogs",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "Morning systems check or an automation alert",
+      "demo_input": "Synthetic scheduler, checkpoint, collector, and log fixtures",
+      "steps": [
+        "Check scheduler state",
+        "Inspect bounded logs and checkpoints",
+        "Separate configured, locally healthy, and externally delivered states",
+        "Do not advance state after failure",
+        "Return one actionable failure packet"
+      ],
+      "output": "Automation health brief",
+      "approval_boundary": "No restart, retry, checkpoint mutation, or provider change without task-specific authority",
+      "success_evidence": "Failures are evidence-backed and healthy status is not inferred from configuration alone"
+    },
+    {
+      "id": "D04",
+      "cadence": "daily",
+      "name": "Triage Gmail requests",
+      "owner_bot": "Communications Intake Analyst",
+      "trigger": "Bounded Gmail intake window or explicit email request",
+      "demo_input": "Synthetic full email thread with To, Cc, dates, and a client alias",
+      "steps": [
+        "Read the full thread",
+        "Identify request, urgency, owner, audience, decision, and promised deliverable",
+        "Resolve the client route",
+        "Create a deliverable task or draft proposal",
+        "Preserve Reply All semantics"
+      ],
+      "output": "Redacted intake card with source locator",
+      "approval_boundary": "Read only; no send and no consumption of login or MFA messages",
+      "success_evidence": "The actual deliverable is inferred and recipients are correctly scoped"
+    },
+    {
+      "id": "D05",
+      "cadence": "daily",
+      "name": "Triage Slack requests",
+      "owner_bot": "Communications Intake Analyst",
+      "trigger": "Bounded Slack intake window or explicit channel or DM request",
+      "demo_input": "Synthetic thread with channel, timestamps, replies, and client alias",
+      "steps": [
+        "Read the exact thread",
+        "Extract request and context",
+        "Resolve one client route",
+        "Create a redacted evidence summary",
+        "Prepare a deliverable or response proposal"
+      ],
+      "output": "Redacted Slack intake card",
+      "approval_boundary": "No channel joins, posts, reactions, or membership changes",
+      "success_evidence": "Thread locator and client route are exact and no cross-client context is blended"
+    },
+    {
+      "id": "D06",
+      "cadence": "daily",
+      "name": "Turn meetings and notes into work",
+      "owner_bot": "Communications Intake Analyst",
+      "trigger": "New meeting notes, transcript, voice note, or founder brain dump",
+      "demo_input": "Synthetic meeting note containing decisions, promises, ideas, and unresolved questions",
+      "steps": [
+        "Separate decisions, commitments, requests, ideas, and background",
+        "Resolve owners and dates",
+        "Route each item to one client or internal project",
+        "Create deliverable proposals",
+        "Flag ambiguous promises"
+      ],
+      "output": "Decision and action packet",
+      "approval_boundary": "No external follow-up or calendar change",
+      "success_evidence": "Every commitment has an owner, route, finish line, and evidence locator"
+    },
+    {
+      "id": "D07",
+      "cadence": "daily",
+      "name": "Triage monitoring and system alerts",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "New monitoring alert, failed job, deployment issue, or health warning",
+      "demo_input": "Synthetic alerts with duplicate, stale, and real-failure examples",
+      "steps": [
+        "Validate freshness",
+        "Deduplicate repeated alerts",
+        "Determine user impact and exact scope",
+        "Collect bounded evidence",
+        "Propose the smallest reversible recovery"
+      ],
+      "output": "Incident triage packet",
+      "approval_boundary": "No destructive recovery or production mutation",
+      "success_evidence": "Impact, scope, evidence, and next safe action are explicit"
+    },
+    {
+      "id": "D08",
+      "cadence": "daily",
+      "name": "Resolve client, account, repository, and environment",
+      "owner_bot": "Client Context Router",
+      "trigger": "Any client-scoped request",
+      "demo_input": "Synthetic client alias plus canonical clients.json fixture",
+      "steps": [
+        "Resolve the canonical client record",
+        "Select brand, account, portal, repository, worktree, environment, and owner",
+        "Read nearest project rules",
+        "Quarantine ambiguous identities"
+      ],
+      "output": "Exact route card",
+      "approval_boundary": "No account switch or write when route is ambiguous",
+      "success_evidence": "One canonical client route is selected with no cross-client blending"
+    },
+    {
+      "id": "D09",
+      "cadence": "daily",
+      "name": "Deduplicate and prioritize work",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "After intake or before beginning a work block",
+      "demo_input": "Synthetic queue containing duplicates, blocked items, and competing deadlines",
+      "steps": [
+        "Match against canonical work",
+        "Deduplicate by outcome",
+        "Score revenue impact, urgency, readiness, evidence freshness, and approval state",
+        "Choose owner, next action, and finish line"
+      ],
+      "output": "Priority packet and queue-write proposal",
+      "approval_boundary": "Bot may propose but cannot write the canonical queue",
+      "success_evidence": "Top priority has a defensible score and duplicate work is avoided"
+    },
+    {
+      "id": "D10",
+      "cadence": "daily",
+      "name": "Infer the real deliverable",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "A request is clear enough to act but does not name the artifact precisely",
+      "demo_input": "Synthetic vague requests such as fix this, report back, or make this better",
+      "steps": [
+        "Identify desired business outcome",
+        "Infer the smallest reviewable artifact",
+        "Name audience and acceptance criteria",
+        "Separate build, review, approval, and delivery states"
+      ],
+      "output": "Deliverable contract",
+      "approval_boundary": "Do not broaden scope into a materially different action",
+      "success_evidence": "The finish line is concrete enough for an independent checker"
+    },
+    {
+      "id": "D11",
+      "cadence": "daily",
+      "name": "Plan dependencies and approval gates",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "Before multi-step or multi-agent execution",
+      "demo_input": "Synthetic dependency graph with research, build, QA, and approval nodes",
+      "steps": [
+        "Define maker and checker",
+        "Identify independent parallel tasks",
+        "Limit evaluator loops",
+        "Place external actions behind exact approvals",
+        "Define failure and abstain states"
+      ],
+      "output": "Bounded execution graph",
+      "approval_boundary": "No agent can grant itself new authority",
+      "success_evidence": "Every node has an input contract, output contract, and owner"
+    },
+    {
+      "id": "D12",
+      "cadence": "daily",
+      "name": "Run repository and worktree preflight",
+      "owner_bot": "Web and Product Builder",
+      "trigger": "Before editing code, content, or configuration",
+      "demo_input": "Local fixture repository with a dirty unrelated file and project AGENTS.md",
+      "steps": [
+        "Confirm exact repository and branch",
+        "Read project rules",
+        "Inspect git status",
+        "Preserve unrelated work",
+        "Verify existing deployment mapping before publishable work"
+      ],
+      "output": "Preflight receipt",
+      "approval_boundary": "No reset, checkout discard, broad move, or deletion",
+      "success_evidence": "Target files and unrelated changes are clearly separated"
+    },
+    {
+      "id": "D13",
+      "cadence": "daily",
+      "name": "Load product truth and visual authority",
+      "owner_bot": "Design and Art Direction Critic",
+      "trigger": "Before substantive UI, website, app, dashboard, or landing-page design",
+      "demo_input": "Local product brief, DESIGN.md, tokens, CSS, canonical components, and approved assets",
+      "steps": [
+        "Resolve surface mode",
+        "Load product truth",
+        "Inspect one real visual authority source",
+        "Run design-system context and checks",
+        "Document constraints and direction"
+      ],
+      "output": "Design context receipt",
+      "approval_boundary": "No invented brand system or unsupported claim",
+      "success_evidence": "The chosen direction is traceable to product and brand evidence"
+    },
+    {
+      "id": "D14",
+      "cadence": "daily",
+      "name": "Build a website, landing page, app, or dashboard",
+      "owner_bot": "Web and Product Builder",
+      "trigger": "Approved local implementation task",
+      "demo_input": "Local fixture and exact repository route",
+      "steps": [
+        "Implement against existing conventions",
+        "Use real content and sourced claims",
+        "Handle responsive, loading, empty, and error states",
+        "Run focused tests and production build",
+        "Prepare review artifact"
+      ],
+      "output": "Local build artifact and verification receipt",
+      "approval_boundary": "No new public site or ambiguous deployment",
+      "success_evidence": "Build succeeds and artifact is reviewable at desktop and mobile sizes"
+    },
+    {
+      "id": "D15",
+      "cadence": "daily",
+      "name": "Generate and package visual assets",
+      "owner_bot": "Brand Voice and Content Studio",
+      "trigger": "A deliverable needs original imagery, mockups, graphics, or resized assets",
+      "demo_input": "Synthetic brief and approved public brand references",
+      "steps": [
+        "Write an evidence-bound visual brief",
+        "Generate or source assets",
+        "Check subject relevance and brand fit",
+        "Create required variants",
+        "Record provenance and usage location"
+      ],
+      "output": "Asset package with provenance receipt",
+      "approval_boundary": "No private-face cloning, misleading result claim, or unlicensed asset assumption",
+      "success_evidence": "Every asset has a route, role, dimensions, and source or generation record"
+    },
+    {
+      "id": "D16",
+      "cadence": "daily",
+      "name": "Produce content, copy, SEO, AEO, and GEO deliverables",
+      "owner_bot": "SEO AEO GEO Strategist",
+      "trigger": "Content, page, campaign, search, answer-engine, or editorial request",
+      "demo_input": "Synthetic offer, audience, verified proof, search intent, and brand voice",
+      "steps": [
+        "Resolve audience and outcome",
+        "Separate sourced facts from strategy",
+        "Build outline and copy",
+        "Add search and answer-engine structure",
+        "Run brand and claim checks"
+      ],
+      "output": "Content artifact and evidence map",
+      "approval_boundary": "No invented testimonials, prices, integrations, outcomes, or product claims",
+      "success_evidence": "Claims are sourced and voice, intent, proof, and conversion path align"
+    },
+    {
+      "id": "D17",
+      "cadence": "daily",
+      "name": "Inspect paid-media delivery read only",
+      "owner_bot": "Paid Media Auditor",
+      "trigger": "Scheduled review, client question, or delivery anomaly",
+      "demo_input": "Synthetic Google Ads and Meta Ads datasets separated by client and date",
+      "steps": [
+        "Verify account, dates, and timezone",
+        "Inspect delivery and spend",
+        "Check tracking health",
+        "Keep platforms and brands separate",
+        "Record inaccessible fields as pending"
+      ],
+      "output": "Read-only paid-media evidence packet",
+      "approval_boundary": "No budget, bid, targeting, creative activation, or spend change",
+      "success_evidence": "Every metric has account, date range, source, and freshness"
+    },
+    {
+      "id": "D18",
+      "cadence": "daily",
+      "name": "Validate attribution, leads, and downstream outcomes",
+      "owner_bot": "CRM and Revenue Ops Analyst",
+      "trigger": "Before conversion claims, optimization recommendations, or client reporting",
+      "demo_input": "Synthetic ad, CRM, booking, and lead-quality records with mismatched attribution",
+      "steps": [
+        "Confirm conversion definition and attribution window",
+        "Check platform latency and tracking health",
+        "Reconcile CRM or booking outcomes",
+        "Assess lead quality",
+        "Use pending-validation language when not defensible"
+      ],
+      "output": "Attribution validation receipt",
+      "approval_boundary": "No CRM mutation or unsupported outcome claim",
+      "success_evidence": "Reported outcomes are either verified or explicitly pending validation"
+    },
+    {
+      "id": "D19",
+      "cadence": "daily",
+      "name": "Build a report, dashboard, deck, or executive summary",
+      "owner_bot": "Reporting and Analytics Analyst",
+      "trigger": "Reporting deadline, performance question, or decision review",
+      "demo_input": "Synthetic source exports with stale, missing, and current fields",
+      "steps": [
+        "Reconcile source fields",
+        "Validate KPI math",
+        "Show definitions and reporting dates",
+        "Explain business meaning and limitations",
+        "Name next decision and owner"
+      ],
+      "output": "Report artifact and source ledger",
+      "approval_boundary": "No fabricated totals or blended clients",
+      "success_evidence": "Derived KPIs can be recomputed from named source fields"
+    },
+    {
+      "id": "D20",
+      "cadence": "daily",
+      "name": "Prepare a Gmail draft",
+      "owner_bot": "Client Communications Draft Desk",
+      "trigger": "A client or partner email requires a response",
+      "demo_input": "Synthetic full thread, recipients, exact signature fixture, and verified deliverable status",
+      "steps": [
+        "Confirm Reply All recipients and exclude Dillon",
+        "Write only the new body in Dillon's voice",
+        "Use clean mobile-readable HTML",
+        "Attach or link the exact artifact",
+        "Verify subject, facts, signature, and no quoted history"
+      ],
+      "output": "Unsent email draft plus approval preview",
+      "approval_boundary": "Draft only; exact send requires separate approval",
+      "success_evidence": "Recipient, subject, body, evidence freshness, and signature are verified"
+    },
+    {
+      "id": "D21",
+      "cadence": "daily",
+      "name": "Prepare a Slack response preview",
+      "owner_bot": "Client Communications Draft Desk",
+      "trigger": "A client or internal Slack thread needs a response",
+      "demo_input": "Synthetic channel thread and verified artifact status",
+      "steps": [
+        "Resolve exact channel or DM",
+        "Read full thread",
+        "Write a concise natural response",
+        "Include artifact and uncertainty",
+        "Show exact preview"
+      ],
+      "output": "Unposted Slack preview",
+      "approval_boundary": "No post, reaction, membership, or channel change",
+      "success_evidence": "The preview names the exact destination and current evidence"
+    },
+    {
+      "id": "D22",
+      "cadence": "daily",
+      "name": "Assemble an approval package",
+      "owner_bot": "Delivery Evidence Auditor",
+      "trigger": "A draft or staged deliverable is ready for a consequential external action",
+      "demo_input": "Synthetic email, Slack, deployment, ad-change, and publish examples",
+      "steps": [
+        "Name what was requested",
+        "Show exact artifact or preview",
+        "State source freshness and blockers",
+        "Name one exact decision",
+        "Bind approval to the displayed version and target"
+      ],
+      "output": "Decision-ready approval card",
+      "approval_boundary": "Approval is version-specific and destination-specific",
+      "success_evidence": "Dillon can answer with one clear decision and understand the consequence"
+    },
+    {
+      "id": "D23",
+      "cadence": "event",
+      "name": "Execute an approved delivery and read it back",
+      "owner_bot": "Delivery Evidence Auditor",
+      "trigger": "Dillon approves the exact preview and destination",
+      "demo_input": "Simulated provider showing approved, stale-preview, failure, and success states",
+      "steps": [
+        "Revalidate target and approval version",
+        "Perform only the approved action",
+        "Read back live sent, posted, published, deployed, or changed state",
+        "Preserve failure evidence",
+        "Update status only after success"
+      ],
+      "output": "External delivery receipt",
+      "approval_boundary": "Training simulation only; a live action requires current exact approval",
+      "success_evidence": "Provider readback confirms target, timestamp, version, and resulting state"
+    },
+    {
+      "id": "D24",
+      "cadence": "daily",
+      "name": "Run independent QA and release criticism",
+      "owner_bot": "Independent QA and Release Critic",
+      "trigger": "A maker declares a local artifact ready",
+      "demo_input": "Finished artifact, requirements, and maker receipt without hidden chain-of-thought",
+      "steps": [
+        "Try to falsify acceptance claims",
+        "Inspect desktop and mobile behavior",
+        "Check accessibility, console, tests, build, and evidence",
+        "Return pass, revise, or blocked",
+        "Name exact defects"
+      ],
+      "output": "Independent QA verdict",
+      "approval_boundary": "Checker cannot silently modify acceptance criteria",
+      "success_evidence": "Verdict is tied to reproduced checks and exact artifacts"
+    },
+    {
+      "id": "D25",
+      "cadence": "daily",
+      "name": "Create an evidence-backed completion handoff",
+      "owner_bot": "Delivery Evidence Auditor",
+      "trigger": "A work item reaches a terminal or handoff state",
+      "demo_input": "Synthetic complete, partial, blocked, drafted, staged, deployed, and sent examples",
+      "steps": [
+        "Lead with outcome",
+        "Name artifacts and exact status",
+        "Separate local proof from external proof",
+        "State unresolved risk and one next action",
+        "Avoid claiming completion beyond evidence"
+      ],
+      "output": "Final status receipt",
+      "approval_boundary": "Only Marketing Chief makes the final canonical completion claim",
+      "success_evidence": "A reviewer can distinguish complete, partial, blocked, drafted, staged, deployed, and sent"
+    },
+    {
+      "id": "D26",
+      "cadence": "daily",
+      "name": "Capture durable knowledge in Dillon OS",
+      "owner_bot": "Knowledge and Obsidian Curator",
+      "trigger": "A durable decision, preference, SOP, source, project lesson, or review is produced",
+      "demo_input": "Synthetic knowledge packet and Dillon OS folder map",
+      "steps": [
+        "Classify source, decision, SOP, project, research, or review",
+        "Find the canonical page",
+        "Propose an update instead of duplicating",
+        "Include source locator and freshness",
+        "Write Grok proposals only to its bounded inbox lane"
+      ],
+      "output": "Knowledge proposal",
+      "approval_boundary": "Grok writes only under 00_Inbox/Agent-Proposals/Grok until reconciled",
+      "success_evidence": "The proposal is source-located, deduplicated, client-separated, and reversible"
+    },
+    {
+      "id": "D27",
+      "cadence": "daily",
+      "name": "Close the operating day",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "End of the final work block",
+      "demo_input": "Synthetic day ledger with complete, partial, blocked, and awaiting-approval work",
+      "steps": [
+        "Reconcile artifacts and receipts",
+        "Name verified outcomes",
+        "Carry forward only active work",
+        "Record unresolved risks and next owners",
+        "Reduce human gates to the smallest necessary set"
+      ],
+      "output": "End-of-day closeout brief",
+      "approval_boundary": "No invented delivery or checkpoint advancement",
+      "success_evidence": "Every active item has exact status, owner, next action, and evidence"
+    },
+    {
+      "id": "W01",
+      "cadence": "weekly",
+      "name": "Reconcile client queue, calendars, and deadlines",
+      "owner_bot": "Weekly Executive Review",
+      "trigger": "Start of weekly planning window",
+      "demo_input": "Synthetic client queue, content calendar, meeting calendar, and deadline list",
+      "steps": [
+        "Resolve current client commitments",
+        "Deduplicate calendars and queue",
+        "Surface due, blocked, and approval-bound work",
+        "Choose highest-leverage outcomes",
+        "Propose weekly sequence"
+      ],
+      "output": "Weekly operating slate",
+      "approval_boundary": "Queue changes remain proposals for Marketing Chief",
+      "success_evidence": "Each priority maps to a client, outcome, owner, deadline, and finish line"
+    },
+    {
+      "id": "W02",
+      "cadence": "weekly-twice",
+      "name": "Paid-media review pass A",
+      "owner_bot": "Paid Media Twice-Weekly Review",
+      "trigger": "First scheduled paid-media review window",
+      "demo_input": "Synthetic account-separated delivery and lead-quality data",
+      "steps": [
+        "Run D17",
+        "Run D18",
+        "Identify delivery or tracking anomalies",
+        "Propose bounded tests",
+        "Prepare client-specific evidence packet"
+      ],
+      "output": "First paid-media review",
+      "approval_boundary": "Read only; no spend or configuration change",
+      "success_evidence": "Recommendations are supported by current account-specific evidence"
+    },
+    {
+      "id": "W03",
+      "cadence": "weekly-twice",
+      "name": "Paid-media review pass B",
+      "owner_bot": "Paid Media Twice-Weekly Review",
+      "trigger": "Second scheduled paid-media review window",
+      "demo_input": "Synthetic follow-up data and prior review receipt",
+      "steps": [
+        "Compare with pass A",
+        "Validate material changes and latency",
+        "Reconcile new downstream outcomes",
+        "Close or continue tests",
+        "Prepare next-action proposal"
+      ],
+      "output": "Second paid-media review",
+      "approval_boundary": "Read only; no spend or configuration change",
+      "success_evidence": "Trend claims distinguish real change from attribution or reporting delay"
+    },
+    {
+      "id": "W04",
+      "cadence": "weekly",
+      "name": "Build the content and creative production calendar",
+      "owner_bot": "Brand Voice and Content Studio",
+      "trigger": "Weekly content planning window",
+      "demo_input": "Synthetic campaigns, offers, deadlines, approved proof, and channel constraints",
+      "steps": [
+        "Map business outcomes to channels",
+        "Resolve audience and voice",
+        "Choose assets and formats",
+        "Assign production and review dates",
+        "Flag claims and approvals"
+      ],
+      "output": "Client-separated production calendar",
+      "approval_boundary": "No scheduling or publishing",
+      "success_evidence": "Every content item has purpose, channel, owner, proof source, and approval state"
+    },
+    {
+      "id": "W05",
+      "cadence": "weekly",
+      "name": "Run the Prospect Radar 25-site website factory",
+      "owner_bot": "Prospect Radar Website Factory",
+      "trigger": "A fresh ready pool contains at least 25 eligible prospects",
+      "demo_input": "Current local production fixture and prior accepted batch ledger",
+      "steps": [
+        "Select 25 without repeated domain or slug",
+        "Build mobile-first noindex concepts",
+        "Integrate exact logo and relevant generated assets",
+        "Run build and browser QA",
+        "Run Impeccable detector and independent checker",
+        "Package mail_ready=hold"
+      ],
+      "output": "Local-only 25-site batch and evidence bundle",
+      "approval_boundary": "No send, deploy, CRM write, billing, or canonical queue change",
+      "success_evidence": "25 of 25 pass build, route, asset, browser, detector, and checker gates"
+    },
+    {
+      "id": "W06",
+      "cadence": "weekly",
+      "name": "Produce client weekly reports",
+      "owner_bot": "Weekly Reporting Operator",
+      "trigger": "Client reporting window",
+      "demo_input": "Synthetic platform, CRM, booking, and delivery exports for separate clients",
+      "steps": [
+        "Run D17 and D18",
+        "Validate KPI math",
+        "Build report or dashboard",
+        "Write executive summary and limitations",
+        "Prepare delivery draft and approval package"
+      ],
+      "output": "Client report, source ledger, and unsent delivery draft",
+      "approval_boundary": "No send and no unsupported conversion language",
+      "success_evidence": "Each report is client-separated, date-bounded, recomputable, and decision-ready"
+    },
+    {
+      "id": "W07",
+      "cadence": "weekly",
+      "name": "Prepare outreach and follow-up draft queue",
+      "owner_bot": "Client Communications Draft Desk",
+      "trigger": "Weekly business-development and follow-up window",
+      "demo_input": "Synthetic prospect list, evidence, relationship state, and approved offer",
+      "steps": [
+        "Deduplicate recipients",
+        "Resolve relationship and context",
+        "Draft personalized messages",
+        "Check claims and brand voice",
+        "Bundle exact previews for approval"
+      ],
+      "output": "Unsent outreach draft queue",
+      "approval_boundary": "No bulk send, sequence activation, or contact mutation",
+      "success_evidence": "Every draft has a source, reason to contact, exact target, and approval state"
+    },
+    {
+      "id": "W08",
+      "cadence": "weekly",
+      "name": "Review CRO, SEO, AEO, GEO, offer, and outreach experiments",
+      "owner_bot": "CRO Experiment Planner",
+      "trigger": "Weekly experiment review",
+      "demo_input": "Synthetic experiment ledger with hypotheses, guardrails, samples, and outcomes",
+      "steps": [
+        "Check hypothesis and metric definition",
+        "Validate data quality and duration",
+        "Classify continue, stop, scale, or inconclusive",
+        "Propose next smallest test",
+        "Record learning"
+      ],
+      "output": "Experiment decision ledger proposal",
+      "approval_boundary": "No live traffic, spend, pricing, or offer change",
+      "success_evidence": "Decision follows predeclared evidence and uncertainty is explicit"
+    },
+    {
+      "id": "W09",
+      "cadence": "weekly",
+      "name": "Audit automation reliability",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "Weekly operations health window",
+      "demo_input": "Synthetic scheduler, retry, connector, checkpoint, and delivery logs",
+      "steps": [
+        "Inventory active scheduled work",
+        "Check last success and external readback",
+        "Find stale access and failed collectors",
+        "Review retries and checkpoint integrity",
+        "Propose reversible remediation"
+      ],
+      "output": "Weekly automation health report",
+      "approval_boundary": "No broad permissions, secret changes, or silent state advancement",
+      "success_evidence": "Every automation is classified as verified, degraded, blocked, stale, or retired"
+    },
+    {
+      "id": "W10",
+      "cadence": "weekly",
+      "name": "Run the executive weekly review",
+      "owner_bot": "Weekly Executive Review",
+      "trigger": "End of weekly operating cycle",
+      "demo_input": "Redacted weekly artifacts, receipts, metrics, risks, and approval states",
+      "steps": [
+        "Summarize verified wins",
+        "Separate activity from outcomes",
+        "Name risks and blocked work",
+        "Review experiments and capacity",
+        "Choose next bets and what should stop",
+        "Propose durable lessons"
+      ],
+      "output": "Executive weekly review",
+      "approval_boundary": "No canonical strategic decision without Dillon or Marketing Chief",
+      "success_evidence": "Review ends with a small ranked decision list and evidence links"
+    },
+    {
+      "id": "W11",
+      "cadence": "weekly",
+      "name": "Test Dillon OS knowledge graph health",
+      "owner_bot": "Knowledge and Obsidian Curator",
+      "trigger": "Weekly knowledge-maintenance window",
+      "demo_input": "Synthetic orphan, duplicate, stale, and correctly linked notes",
+      "steps": [
+        "Run bounded knowledge health checks",
+        "Find duplicates and orphaned decisions",
+        "Check canonical indexes",
+        "Propose one high-value correction",
+        "Verify links after accepted changes"
+      ],
+      "output": "Knowledge health receipt and one proposal",
+      "approval_boundary": "No broad vault rewrite or deletion",
+      "success_evidence": "Findings are reproducible and proposed change is narrow and reversible"
+    },
+    {
+      "id": "M01",
+      "cadence": "monthly",
+      "name": "Audit access and credential continuity",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "Monthly access review",
+      "demo_input": "Sanitized access registry and synthetic stale OAuth records",
+      "steps": [
+        "Check exact service and account mappings",
+        "Review allowed capabilities",
+        "Validate non-secret credential locators",
+        "Identify stale or retired access",
+        "Prepare human-only renewal list"
+      ],
+      "output": "Redacted access continuity report",
+      "approval_boundary": "No secret extraction, vault account switch, consent, or capability expansion",
+      "success_evidence": "Every service has an exact owner, account, method, capability, and verification age"
+    },
+    {
+      "id": "M02",
+      "cadence": "monthly",
+      "name": "Evaluate agents, permissions, and output quality",
+      "owner_bot": "Independent QA and Release Critic",
+      "trigger": "Monthly agent governance review",
+      "demo_input": "Synthetic agent receipts plus real non-secret agent definitions",
+      "steps": [
+        "Review scope and tool permissions",
+        "Sample outputs against acceptance contracts",
+        "Check maker-checker independence",
+        "Find redundant or unsafe agents",
+        "Propose retire, revise, or retain"
+      ],
+      "output": "Agent evaluation scorecard",
+      "approval_boundary": "No permission expansion or deletion without approval",
+      "success_evidence": "Each agent has measured quality, bounded authority, and a disposition"
+    },
+    {
+      "id": "M03",
+      "cadence": "monthly",
+      "name": "Audit scheduled work, usage, and cost",
+      "owner_bot": "Weekly Executive Review",
+      "trigger": "Monthly operating-cost review",
+      "demo_input": "Synthetic schedule, runtime, usage, failure, and value data",
+      "steps": [
+        "Inventory scheduled routines",
+        "Measure successful outputs and failures",
+        "Compare usage and cost with business value",
+        "Identify duplicate or low-value work",
+        "Propose stop, change, or continue"
+      ],
+      "output": "Automation value and cost report",
+      "approval_boundary": "No subscription, billing, or schedule cancellation",
+      "success_evidence": "Every recurring cost maps to a verified outcome or a clear stop proposal"
+    },
+    {
+      "id": "M04",
+      "cadence": "monthly",
+      "name": "Audit client and account separation",
+      "owner_bot": "Client Context Router",
+      "trigger": "Monthly governance review or suspected route contamination",
+      "demo_input": "Synthetic mixed-client records and canonical registry",
+      "steps": [
+        "Sample routes, assets, communications, metrics, and access metadata",
+        "Detect cross-client blending",
+        "Verify canonical client records",
+        "Quarantine ambiguous items",
+        "Propose corrections"
+      ],
+      "output": "Client separation audit",
+      "approval_boundary": "No record move or provider mutation without approval",
+      "success_evidence": "Every sampled artifact maps to exactly one client or is quarantined"
+    },
+    {
+      "id": "M05",
+      "cadence": "monthly",
+      "name": "Refresh operating rules, brand voice, and design truth",
+      "owner_bot": "Knowledge and Obsidian Curator",
+      "trigger": "Monthly documentation review or material brand/system change",
+      "demo_input": "Synthetic conflicting rule set plus canonical AGENTS.md, product, brand, and design documents",
+      "steps": [
+        "Compare durable rules with current behavior",
+        "Resolve project versus global scope",
+        "Find stale brand or design guidance",
+        "Prepare source-located updates",
+        "Verify generated sidecars only through supported tools"
+      ],
+      "output": "Documentation refresh proposal",
+      "approval_boundary": "No silent overwrite of canonical truth",
+      "success_evidence": "Proposals state authority, scope, conflict, and intended effective date"
+    },
+    {
+      "id": "E01",
+      "cadence": "event",
+      "name": "Onboard a new client",
+      "owner_bot": "Client Context Router",
+      "trigger": "A signed or explicitly authorized new client enters operations",
+      "demo_input": "Synthetic onboarding packet with brand, people, accounts, deliverables, and ambiguity",
+      "steps": [
+        "Create one canonical identity proposal",
+        "Separate brand, accounts, portals, repositories, people, and communications",
+        "Identify access and evidence gaps",
+        "Define first deliverables and reporting",
+        "Prepare approval gates"
+      ],
+      "output": "Client onboarding packet",
+      "approval_boundary": "No live account connection, invitation, message, spend, or publish",
+      "success_evidence": "The client has one canonical route and no mixed account context"
+    },
+    {
+      "id": "E02",
+      "cadence": "event",
+      "name": "Handle an urgent inbound request",
+      "owner_bot": "Morning Marketing Chief Operator",
+      "trigger": "A time-sensitive client, executive, or production request arrives",
+      "demo_input": "Synthetic urgent request with incomplete context and a hard deadline",
+      "steps": [
+        "Verify urgency and target",
+        "Resolve exact client and requested outcome",
+        "Collect minimum evidence",
+        "Build the smallest safe deliverable",
+        "Run independent check",
+        "Prepare one approval or handoff"
+      ],
+      "output": "Urgent deliverable and risk receipt",
+      "approval_boundary": "Urgency does not broaden delivery or security authority",
+      "success_evidence": "Deadline, tradeoffs, artifact, verification, and remaining risk are explicit"
+    },
+    {
+      "id": "E03",
+      "cadence": "event",
+      "name": "Deploy an approved website change to an existing mapped Netlify site",
+      "owner_bot": "Web and Product Builder",
+      "trigger": "A completed website change has an exact existing verified Netlify mapping",
+      "demo_input": "Local deployment simulator with exact-site and ambiguous-site cases",
+      "steps": [
+        "Verify repository, branch, client, and existing target",
+        "Run final tests and production build",
+        "Deploy only to the mapped site",
+        "Read back live URL and version",
+        "Report rollback path"
+      ],
+      "output": "Deployment receipt",
+      "approval_boundary": "No new public site, ambiguous target, or cross-client deployment",
+      "success_evidence": "Live readback matches the built artifact and exact existing target"
+    },
+    {
+      "id": "E04",
+      "cadence": "event",
+      "name": "Recover a failed connector or collector",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "A connector, collector, or ingestion path fails",
+      "demo_input": "Synthetic missing collector, expired OAuth, provider outage, and malformed-output cases",
+      "steps": [
+        "Preserve checkpoints",
+        "Identify exact failure boundary",
+        "Validate required connector and account",
+        "Attempt bounded supported recovery",
+        "Rerun same overlap",
+        "Read back external or persisted state"
+      ],
+      "output": "Recovery or blocked receipt",
+      "approval_boundary": "No fabricated records, secret exposure, provider substitution, or checkpoint advancement",
+      "success_evidence": "Recovered data is source-backed or run is honestly blocked with state preserved"
+    },
+    {
+      "id": "E05",
+      "cadence": "event",
+      "name": "Onboard an existing repository or project",
+      "owner_bot": "Web and Product Builder",
+      "trigger": "A previously unseen repository enters active work",
+      "demo_input": "Local fixture repository with docs, tests, deployment metadata, and dirty changes",
+      "steps": [
+        "Locate canonical project",
+        "Read rules and docs",
+        "Map architecture and commands",
+        "Inspect git and deployment state",
+        "Create a bounded onboarding receipt"
+      ],
+      "output": "Codebase route and operating guide",
+      "approval_boundary": "Read only unless implementation was requested",
+      "success_evidence": "Commands, boundaries, owners, tests, and deployment targets are evidence-backed"
+    },
+    {
+      "id": "E06",
+      "cadence": "event",
+      "name": "Prepare a campaign or paid-media launch gate",
+      "owner_bot": "Paid Media Auditor",
+      "trigger": "A campaign is ready for activation or material change",
+      "demo_input": "Synthetic campaign, budget, targeting, creative, landing page, tracking, and approval data",
+      "steps": [
+        "Verify account and client",
+        "Review budget, targeting, creative, dates, and destination",
+        "Test tracking and conversion definition",
+        "Check policy and claims",
+        "Show exact launch preview and consequence"
+      ],
+      "output": "Campaign approval package",
+      "approval_boundary": "No activation, spend, or configuration change",
+      "success_evidence": "Every consequential setting is visible and tied to exact approval"
+    },
+    {
+      "id": "E07",
+      "cadence": "event",
+      "name": "Run a human-only authentication handoff",
+      "owner_bot": "Delivery Evidence Auditor",
+      "trigger": "MFA, CAPTCHA, passkey, push approval, recovery, or new consent is required",
+      "demo_input": "Synthetic authentication gate with no real secret",
+      "steps": [
+        "Pause before the gate",
+        "State exact service, account, and requested human action",
+        "Hide unrelated windows",
+        "Resume only after the user completes it",
+        "Verify session without recording the secret"
+      ],
+      "output": "Authentication handoff receipt",
+      "approval_boundary": "Human completes the sensitive action; Bot never reads or stores the value",
+      "success_evidence": "Correct session is verified and no sensitive value appears in output or recording"
+    },
+    {
+      "id": "E08",
+      "cadence": "event",
+      "name": "Contain a privacy, credential, or cross-client incident",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "Possible secret exposure, account mismatch, cross-client data blend, or unsafe permission request",
+      "demo_input": "Synthetic exposure and misrouting cases",
+      "steps": [
+        "Stop affected action",
+        "Identify exact scope without repeating secret values",
+        "Preserve audit evidence",
+        "Revoke or rotate through the approved human/provider path",
+        "Check for copies",
+        "Prepare incident receipt"
+      ],
+      "output": "Sanitized containment report",
+      "approval_boundary": "No destructive cleanup or provider change beyond current authority",
+      "success_evidence": "Exposure is bounded, copies are located, and required rotation or review is explicit"
+    },
+    {
+      "id": "E09",
+      "cadence": "event",
+      "name": "Process a recurring approved social-content packet",
+      "owner_bot": "Brand Voice and Content Studio",
+      "trigger": "An authorized recurring content packet arrives for a named client workflow",
+      "demo_input": "Synthetic weekly packet, exact graphics, exact copy, dates, and duplicate schedule",
+      "steps": [
+        "Treat packet as source of truth",
+        "Extract exact assets and copy",
+        "Verify destination account",
+        "Check scheduler for duplicates",
+        "Prepare or execute only the standing-approved scope",
+        "Read back scheduled state"
+      ],
+      "output": "Packet processing receipt",
+      "approval_boundary": "Standing approval never expands beyond exact packet, dates, platform, and account",
+      "success_evidence": "Content, date, account, duplicate check, and live state match the packet"
+    },
+    {
+      "id": "E10",
+      "cadence": "event",
+      "name": "Take over or recover a live agent runtime",
+      "owner_bot": "Automation Reliability Scout",
+      "trigger": "Hermes or another bounded runtime is failing, conflicting, or being transferred",
+      "demo_input": "Synthetic runtime logs, gateway state, conflicting poller, and test messages",
+      "steps": [
+        "Inspect real process and logs",
+        "Identify competing workers or stale state",
+        "Apply bounded recovery",
+        "Verify sustained inbound and reply behavior",
+        "Return evidence to Marketing Chief"
+      ],
+      "output": "Runtime recovery receipt",
+      "approval_boundary": "No token exposure, parallel command center, or unverified completion claim",
+      "success_evidence": "Behavior is verified from current logs and end-to-end runtime evidence"
+    },
+    {
+      "id": "E11",
+      "cadence": "event",
+      "name": "Capture and add a newly discovered routine",
+      "owner_bot": "Knowledge and Obsidian Curator",
+      "trigger": "Dillon performs a repeated workflow not already represented in this manifest",
+      "demo_input": "Sanitized walkthrough of the new routine",
+      "steps": [
+        "Name trigger and finish line",
+        "Record inputs, steps, outputs, systems, and client scope",
+        "Mark approvals and never-record surfaces",
+        "Run one canary with synthetic data",
+        "Add the routine to the manifest and ledger",
+        "Schedule evaluation"
+      ],
+      "output": "New routine definition and verified recording entry",
+      "approval_boundary": "No routine inherits broader permissions than the demonstrated task",
+      "success_evidence": "The new routine is reproducible, privacy-bounded, and independently verifiable"
+    }
+  ]
+}

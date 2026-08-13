@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "name": "bounded-revenue-proof-loop",
+  "objective": "Prove one useful revenue workflow without creating a second command center or upgrading missing evidence.",
+  "pattern": [
+    {
+      "step": "schedule_and_intake",
+      "owner": "marketing-chief",
+      "output": "one exact outcome, client route, evidence window, and authority boundary"
+    },
+    {
+      "step": "evidence_collection",
+      "owner": "smallest-useful-specialist-team",
+      "output": "source-located current evidence or an explicit pending field"
+    },
+    {
+      "step": "artifact_build",
+      "owner": "maker",
+      "output": "one reviewable local artifact"
+    },
+    {
+      "step": "quality_gate",
+      "owner": "independent-checker",
+      "output": "pass, revise, or blocked with reproduced checks"
+    },
+    {
+      "step": "bounded_repair",
+      "owner": "maker",
+      "max_loops": 2,
+      "output": "corrected artifact or honest blocker"
+    },
+    {
+      "step": "canonical_handoff",
+      "owner": "marketing-chief",
+      "output": "redacted receipt, approval state, evidence paths, risks, and one next-safe action"
+    }
+  ],
+  "fail_closed_when": [
+    "source evidence is unavailable or stale",
+    "client, account, repository, or authority is ambiguous",
+    "acceptance checks cannot be reproduced",
+    "delivery would require an unapproved external action"
+  ],
+  "external_actions": "denied",
+  "canonical_queue_writer": "marketing-chief"
+}

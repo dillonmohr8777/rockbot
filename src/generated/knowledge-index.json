@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "source_root": "C:\\Users\\dillo\\repos\\dillon-os\\11_Agents\\Rockbot Operating System",
+  "source_index_sha256": "be617865e7054cf51b1c67000c39dc661d73291071d8f22326f9e65988d2a23e",
+  "source_index_entries": null,
+  "workflow": {
+    "name": "grok-marketing-specialist-bench",
+    "pattern": "orchestrator",
+    "orchestrator": {
+      "agent": "codex-marketing-chief",
+      "planning": "dynamic",
+      "canonical_queue_writer": true,
+      "final_verifier": true
+    },
+    "specialists": [
+      "grok-research-scout",
+      "web-product-builder",
+      "reporting-analytics-analyst",
+      "brand-voice-content-studio",
+      "independent-qa-release-critic",
+      "automation-reliability-scout"
+    ],
+    "execution": {
+      "dependency_mode": "dag",
+      "max_parallel": 3,
+      "completion_policy": "all_required",
+      "max_evaluator_loops": 2
+    },
+    "handoff_required_fields": [
+      "workflow_id",
+      "step_id",
+      "agent",
+      "task",
+      "client_id",
+      "canonical_route",
+      "constraints",
+      "source_locators",
+      "upstream_artifacts",
+      "budget_tokens",
+      "timeout_seconds",
+      "acceptance_checks",
+      "evidence_paths",
+      "risks",
+      "approval_state"
+    ],
+    "delivery_gate": "codex-marketing-chief",
+    "external_actions_default": "denied"
+  },
+  "source_state": {
+    "manifest_mtime": "2026-08-12T01:34:08.554Z",
+    "bench_mtime": "2026-08-11T23:22:40.731Z"
+  }
+}

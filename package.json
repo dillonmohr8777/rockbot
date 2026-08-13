@@ -1,0 +1,41 @@
+{
+  "name": "rockbot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local model-agnostic operating-team console for Dillon OS.",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3434",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3434",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "sync:knowledge": "node scripts/sync-rockbot-knowledge.mjs",
+    "verify:knowledge": "node scripts/verify-knowledge.mjs",
+    "verify:providers": "node scripts/verify-provider-canaries.mjs",
+    "heartbeat": "node scripts/run-system-heartbeat.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "1.31.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.0",
+    "jsdom": "28.1.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}
