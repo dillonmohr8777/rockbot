@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet('WranglerOrigin', 'SitesEnvironment')]
+  [ValidateSet('WranglerOrigin', 'TestOrigin')]
   [string]$Target
 )
 
@@ -72,8 +72,20 @@ switch ($Target) {
     $secret = $null
     exit $exitCode
   }
-  'SitesEnvironment' {
-    [Console]::Out.Write($secret)
-    $secret = $null
+  'TestOrigin' {
+    try {
+      $response = Invoke-WebRequest `
+        -Uri 'https://rockbot-private-origin.dillonmohr8777.workers.dev/api/health' `
+        -Headers @{ 'x-rockbot-gateway' = $secret } `
+        -UseBasicParsing
+
+      if ([int]$response.StatusCode -ne 200 -or $response.Content -notmatch 'ready') {
+        throw 'The Rockbot private origin returned an unexpected health response.'
+      }
+
+      Write-Output 'Rockbot private origin health check passed (HTTP 200).'
+    } finally {
+      $secret = $null
+    }
   }
 }
