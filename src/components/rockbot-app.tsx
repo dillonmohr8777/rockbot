@@ -79,6 +79,16 @@ interface UiRun {
   error?: string;
 }
 
+interface PersistedRun {
+  runId: string;
+  localId: string;
+  prompt: string;
+  provider: ProviderId;
+  model: string;
+  agentId: string;
+  startedAt: string;
+}
+
 interface RockbotAppProps {
   initialAgents: AgentDefinition[];
   initialRoutines: RoutineDefinition[];
@@ -92,6 +102,8 @@ const initialPrompts = [
   "Audit this workspace and return a decision-ready handoff",
   "Route a client request to the smallest useful team",
 ];
+
+const activeRunStorageKey = "rockbot.activeRun";
 
 const providerFallbacks: ProviderHealth[] = [
   { id: "codex", label: "Codex", state: "offline", installed: true, detail: "Checking local session…", models: [{ id: "default", label: "Account default" }], capabilities: ["chat", "reasoning", "workspace"] },
@@ -304,12 +316,14 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     const storedProvider = window.localStorage.getItem("rockbot.provider") as ProviderId | null;
     const savedProvider = storedProvider === "demo" ? null : storedProvider;
     const savedModel = savedProvider ? window.localStorage.getItem("rockbot.model") : null;
+    const savedPermissionMode = window.localStorage.getItem("rockbot.permissionMode");
     if (storedProvider === "demo") {
       window.localStorage.removeItem("rockbot.provider");
       window.localStorage.removeItem("rockbot.model");
     }
     if (savedProvider && ["demo", "codex", "claude", "grok", "ollama"].includes(savedProvider)) setSelectedProvider(savedProvider);
     if (savedModel) setSelectedModel(savedModel);
+    if (savedPermissionMode === "observe" || savedPermissionMode === "workspace") setPermissionMode(savedPermissionMode);
 
     const controller = new AbortController();
     fetch("/api/runtime", { cache: "no-store", signal: controller.signal })
@@ -436,12 +450,13 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     }));
   }, []);
 
-  const recoverRunReceipt = useCallback(async (localId: string, runId: string) => {
+  const recoverRunReceipt = useCallback(async (localId: string, runId: string, signal?: AbortSignal) => {
     setRuns((current) => current.map((run) => run.localId === localId
       ? { ...run, activities: [...run.activities.slice(-7), "Phone connection dropped. The computer is still working; reconnecting to the receipt..."] }
       : run));
     const deadline = Date.now() + 60 * 60 * 1_000;
     while (Date.now() < deadline) {
+      if (signal?.aborted) throw new DOMException("Run recovery stopped.", "AbortError");
       try {
         const response = await fetch(`/api/runs/${encodeURIComponent(runId)}`, { cache: "no-store" });
         if (response.ok) {
@@ -449,8 +464,17 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
           if (payload.receipt) {
             const receipt = payload.receipt;
             setRuns((current) => current.map((run) => run.localId === localId
-              ? { ...run, receipt, phase: receipt.outcome, error: undefined }
+              ? {
+                  ...run,
+                  receipt,
+                  phase: receipt.outcome,
+                  routeAgentIds: run.routeAgentIds.length ? run.routeAgentIds : receipt.agents,
+                  agentStates: run.routeAgentIds.length ? run.agentStates : Object.fromEntries(receipt.agents.map((id) => [id, "complete" as const])),
+                  activities: [...run.activities.slice(-7), "Recovered the completed run receipt."],
+                  error: undefined,
+                }
               : run));
+            window.localStorage.removeItem(activeRunStorageKey);
             return;
           }
         } else if (response.status >= 400 && response.status < 500 && response.status !== 404) {
@@ -464,6 +488,55 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     }
     throw new Error("The run is still working, but the phone could not recover its receipt within one hour.");
   }, []);
+
+  useEffect(() => {
+    const raw = window.localStorage.getItem(activeRunStorageKey);
+    if (!raw) return;
+    let saved: PersistedRun;
+    try {
+      saved = JSON.parse(raw) as PersistedRun;
+    } catch {
+      window.localStorage.removeItem(activeRunStorageKey);
+      return;
+    }
+    if (!/^rb-[A-Za-z0-9-]+$/.test(saved.runId)) {
+      window.localStorage.removeItem(activeRunStorageKey);
+      return;
+    }
+    const recoveredLocalId = saved.localId || `recovered-${saved.runId}`;
+    setRuns((current) => current.some((run) => run.runId === saved.runId) ? current : [...current, {
+      localId: recoveredLocalId,
+      runId: saved.runId,
+      prompt: saved.prompt || "Recover the interrupted Rockbot run",
+      provider: saved.provider || "codex",
+      model: saved.model || "default",
+      agentId: saved.agentId || "marketing-chief",
+      startedAt: saved.startedAt || new Date().toISOString(),
+      phase: "working",
+      routeAgentIds: [],
+      agentStates: {},
+      agentOutputs: {},
+      activities: ["Reopening the run from the durable computer receipt..."],
+      synthesis: "",
+    }]);
+    setActiveRunId(recoveredLocalId);
+    serverRunRef.current = saved.runId;
+    const recoveryController = new AbortController();
+    void recoverRunReceipt(recoveredLocalId, saved.runId, recoveryController.signal)
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        window.localStorage.removeItem(activeRunStorageKey);
+        setRuns((current) => current.map((run) => run.localId === recoveredLocalId
+          ? { ...run, phase: "failed", error: error instanceof Error ? error.message : "Rockbot could not recover the saved run." }
+          : run));
+      })
+      .finally(() => {
+        if (recoveryController.signal.aborted) return;
+        serverRunRef.current = null;
+        setActiveRunId(null);
+      });
+    return () => recoveryController.abort();
+  }, [recoverRunReceipt]);
 
   const executePrompt = useCallback(async (override?: string) => {
     const task = (override ?? prompt).trim();
@@ -503,8 +576,22 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     let recoveryAttempted = false;
 
     const handleEvent = (event: RunEvent) => {
-      if (event.type === "run_started") serverRunId = event.runId;
-      if (event.type === "receipt") receivedReceipt = true;
+      if (event.type === "run_started") {
+        serverRunId = event.runId;
+        window.localStorage.setItem(activeRunStorageKey, JSON.stringify({
+          runId: event.runId,
+          localId,
+          prompt: task,
+          provider: selectedProvider,
+          model: selectedModel,
+          agentId: selectedAgentId,
+          startedAt: run.startedAt,
+        } satisfies PersistedRun));
+      }
+      if (event.type === "receipt") {
+        receivedReceipt = true;
+        window.localStorage.removeItem(activeRunStorageKey);
+      }
       updateRunFromEvent(localId, event);
     };
 
@@ -593,6 +680,11 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
       window.localStorage.setItem("rockbot.provider", provider);
       window.localStorage.setItem("rockbot.model", model);
     }
+  };
+
+  const choosePermissionMode = (mode: PermissionMode) => {
+    setPermissionMode(mode);
+    window.localStorage.setItem("rockbot.permissionMode", mode);
   };
 
   const selectAgent = (id: string) => {
@@ -820,7 +912,7 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
               permissionMode={permissionMode}
               teamMode={teamMode}
               onWorkingDirectory={setWorkingDirectory}
-              onPermissionMode={setPermissionMode}
+              onPermissionMode={choosePermissionMode}
               onTeamMode={setTeamMode}
             />
           )}

@@ -130,6 +130,24 @@ test.describe("Rockbot command center", () => {
       externalActionAttempted: false,
     });
   });
+
+  test("recovers an active run and its receipt after a full page reload", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop recovery path.");
+    await page.goto("/");
+    await page.getByTestId("model-trigger").click();
+    await page.locator(".provider-option__button", { hasText: "Simulation" }).click();
+    await page.getByRole("button", { name: "Close model picker" }).click();
+    await page.getByTestId("composer-input").fill("Run the synthetic recovery canary and return its evidence.");
+    await page.getByTestId("send-button").click();
+
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem("rockbot.activeRun"))).not.toBeNull();
+    await page.reload();
+
+    const receipt = page.getByRole("status").filter({ has: page.locator(".receipt-outcome") });
+    await expect(receipt).toContainText("complete", { timeout: 20_000 });
+    await expect(receipt).toContainText("evidence: local verified");
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem("rockbot.activeRun"))).toBeNull();
+  });
 });
 
 test.describe("Rockbot responsive and motion behavior", () => {
