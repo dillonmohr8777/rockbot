@@ -36,6 +36,7 @@ import type {
 } from "@/lib/contracts";
 import type { RoutineDefinition } from "@/lib/routines";
 import { BotGlyph } from "@/components/bot-glyph";
+import { parsePersistedRun, type PersistedRun } from "@/lib/orchestrator/persisted-run";
 
 type InspectorTab = "runtime" | "routines" | "schedules";
 type AgentRunState = "queued" | "working" | "complete" | "failed";
@@ -77,16 +78,6 @@ interface UiRun {
   receipt?: RunReceipt;
   blocker?: string;
   error?: string;
-}
-
-interface PersistedRun {
-  runId: string;
-  localId: string;
-  prompt: string;
-  provider: ProviderId;
-  model: string;
-  agentId: string;
-  startedAt: string;
 }
 
 interface RockbotAppProps {
@@ -491,15 +482,9 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
 
   useEffect(() => {
     const raw = window.localStorage.getItem(activeRunStorageKey);
-    if (!raw) return;
-    let saved: PersistedRun;
-    try {
-      saved = JSON.parse(raw) as PersistedRun;
-    } catch {
-      window.localStorage.removeItem(activeRunStorageKey);
-      return;
-    }
-    if (!/^rb-[A-Za-z0-9-]+$/.test(saved.runId)) {
+    if (raw === null) return;
+    const saved = parsePersistedRun(raw);
+    if (!saved) {
       window.localStorage.removeItem(activeRunStorageKey);
       return;
     }
