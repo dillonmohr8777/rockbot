@@ -1,5 +1,5 @@
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   assertAllowedWorkingDirectory,
   assertPromptHasNoLikelySecret,
@@ -7,10 +7,14 @@ import {
 } from "../src/lib/orchestrator/safety";
 
 describe("local safety gates", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it("accepts only the configured project roots", () => {
-    expect(assertAllowedWorkingDirectory("C:\\Users\\dillo\\Documents\\Codex\\projects\\rockbot"))
-      .toBe(path.resolve("C:\\Users\\dillo\\Documents\\Codex\\projects\\rockbot"));
-    expect(() => assertAllowedWorkingDirectory("C:\\Windows\\System32")).toThrow(/outside Rockbot/);
+    const root = path.resolve("test-allowlist");
+    const project = path.join(root, "project");
+    vi.stubEnv("ROCKBOT_ALLOWED_ROOTS", root);
+    expect(assertAllowedWorkingDirectory(project)).toBe(project);
+    expect(() => assertAllowedWorkingDirectory(`${root}-other`)).toThrow(/outside Rockbot/);
   });
 
   it("stops likely credentials before provider transmission", () => {
