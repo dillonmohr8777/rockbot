@@ -1,6 +1,68 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Rockbot command center", () => {
+  for (const [name, stored] of [
+    ["an empty storage value", ""],
+    ["JSON null", null],
+    ["an invalid start time", { runId: "rb-test-invalid-date", startedAt: "not-a-date" }],
+    ["a non-text prompt", { runId: "rb-test-invalid-prompt", prompt: { text: "invalid" } }],
+  ] as const) {
+    test(`handles saved run data containing ${name} without breaking the console`, async ({ page }) => {
+      const pageErrors: string[] = [];
+      const recoveryRequests: string[] = [];
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      page.on("request", (request) => {
+        if (request.url().includes("/api/runs/")) recoveryRequests.push(request.url());
+      });
+      if (stored) {
+        await page.route(`**/api/runs/${stored.runId}`, (route) => route.fulfill({
+          json: {
+            ok: true,
+            state: "finished",
+            receipt: {
+              schemaVersion: 2,
+              runId: stored.runId,
+              outcome: "complete",
+              artifactState: "none",
+              deliveryState: "not_attempted",
+              verificationState: "local_verified",
+              provider: "demo",
+              model: "protocol-54-fixture",
+              workingDirectory: "synthetic recovery fixture",
+              permissionMode: "observe",
+              agents: ["marketing-chief"],
+              privacy: "redacted",
+              externalActionAttempted: false,
+              canonicalQueueWrite: false,
+              checks: ["synthetic receipt recovery"],
+              approvalState: "not_required",
+              nextSafestAction: "Review the recovered synthetic receipt.",
+              startedAt: "2026-10-03T01:01:01.000Z",
+              completedAt: "2026-10-03T01:01:02.000Z",
+            },
+          },
+        }));
+      }
+      await page.addInitScript((value) => {
+        window.localStorage.setItem("rockbot.activeRun", typeof value === "string" ? value : JSON.stringify(value));
+      }, stored);
+
+      await page.goto("/");
+
+      await expect(page.getByTestId("composer-input")).toBeVisible();
+      await expect.poll(() => page.evaluate(() => window.localStorage.getItem("rockbot.activeRun"))).toBeNull();
+      if (stored) {
+        await expect(page.getByTestId("run-exchange")).toBeVisible();
+        await expect(page.locator(".receipt-outcome")).toContainText("complete");
+        expect(recoveryRequests).toHaveLength(1);
+      } else {
+        await expect(page.getByTestId("run-exchange")).toHaveCount(0);
+        expect(recoveryRequests).toEqual([]);
+      }
+      expect(pageErrors).toEqual([]);
+    });
+  }
+
   test("keeps the full desktop shell inside the viewport", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop geometry assertion.");
     const runtimeResponse = page.waitForResponse((response) => response.url().endsWith("/api/runtime") && response.status() === 200);
@@ -112,7 +174,7 @@ test.describe("Rockbot command center", () => {
         provider: "demo",
         model: "protocol-54-fixture",
         agentId: "delivery-evidence-auditor",
-        workingDirectory: "C:\\Windows",
+        workingDirectory: process.platform === "win32" ? "C:\\Windows" : "/etc",
         permissionMode: "observe",
         teamMode: false,
       },
