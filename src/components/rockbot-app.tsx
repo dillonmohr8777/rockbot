@@ -337,6 +337,41 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
     return () => controller.abort();
   }, []);
 
+  // WebMCP: an agent reads which providers are actually connected, from the snapshot this page already loaded.
+  // Read-only; no provider probes, demo readiness, filesystem roots, version details or raw errors.
+  const runtimeRef = useRef<{ snapshot: RuntimeSnapshot | null; failed: boolean; at: string | null }>({ snapshot: null, failed: false, at: null });
+  useEffect(() => {
+    runtimeRef.current = { snapshot: runtime, failed: Boolean(runtimeError), at: runtime ? new Date().toISOString() : runtimeRef.current.at };
+  }, [runtime, runtimeError]);
+  useEffect(() => {
+    type ModelContext = { registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => unknown };
+    const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
+    if (!modelContext?.registerTool) return;
+    const controller = new AbortController();
+    Promise.resolve()
+      .then(() => modelContext.registerTool({
+        name: "get_runtime_status",
+        description: "Which Rockbot providers are really connected right now (ready, needs sign-in, offline, unavailable), with counts, plus the routine count and run policy limits. Uses the status this page already loaded; the demo provider is left out. Read-only.",
+        inputSchema: { type: "object", properties: {} },
+        annotations: { readOnlyHint: true },
+        execute: () => {
+          const { snapshot, failed, at } = runtimeRef.current;
+          if (!snapshot) return JSON.stringify({ runtime_check: failed ? "failed" : "loading", error: failed ? "The local runtime check failed; reload Rockbot and try again." : "Runtime status is still loading; try again in a few seconds." });
+          const real = snapshot.providers.filter((provider) => provider.id !== "demo");
+          const byState: Record<string, number> = {};
+          real.forEach((provider) => { byState[provider.state] = (byState[provider.state] ?? 0) + 1; });
+          return JSON.stringify({
+            runtime_check: "ok", observed_at: at, status: snapshot.status, by_state: byState,
+            providers: real.map(({ id, label, state, installed }) => ({ id, label, state, installed })),
+            routines: snapshot.knowledge.routines,
+            policy: { max_concurrent_specialists: snapshot.policy.maxConcurrentSpecialists, max_evaluator_loops: snapshot.policy.maxEvaluatorLoops, external_actions_default: snapshot.policy.externalActionsDefault },
+          });
+        },
+      }, { signal: controller.signal }))
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ behavior: activeRunId ? "smooth" : "auto", block: "end" });
   }, [runs, activeRunId]);
