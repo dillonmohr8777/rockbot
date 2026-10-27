@@ -34,6 +34,7 @@ import type {
   RunEvent,
   RunReceipt,
 } from "@/lib/contracts";
+import { runtimeStatusJson, type RuntimeCheck } from "@/lib/runtime-status";
 import type { RoutineDefinition } from "@/lib/routines";
 import { BotGlyph } from "@/components/bot-glyph";
 import { parsePersistedRun, type PersistedRun } from "@/lib/orchestrator/persisted-run";
@@ -257,6 +258,8 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
   const [workingDirectory, setWorkingDirectory] = useState(initialWorkingDirectory);
   const [runtime, setRuntime] = useState<RuntimeSnapshot | null>(null);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
+  // What the WebMCP get_runtime_status tool reports: set only where the /api/runtime check itself lands.
+  const runtimeCheckRef = useRef<RuntimeCheck>({ snapshot: null, failed: false, at: null });
   const [prompt, setPrompt] = useState("");
   const [runs, setRuns] = useState<UiRun[]>([]);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
@@ -323,6 +326,7 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
         return response.json() as Promise<RuntimeSnapshot>;
       })
       .then((snapshot) => {
+        runtimeCheckRef.current = { snapshot, failed: false, at: new Date().toISOString() };
         setRuntime(snapshot);
         setRuntimeError(null);
         const currentProvider = snapshot.providers.find((provider) => provider.id === (savedProvider ?? "codex"));
@@ -332,43 +336,30 @@ export function RockbotApp({ initialAgents, initialRoutines, initialSchedules, i
       })
       .catch((error) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
+        runtimeCheckRef.current = { ...runtimeCheckRef.current, failed: true };
         setRuntimeError(error instanceof Error ? error.message : "Local runtime check failed.");
       });
     return () => controller.abort();
   }, []);
 
-  // WebMCP: an agent reads which providers are actually connected, from the snapshot this page already loaded.
-  // Read-only; no provider probes, demo readiness, filesystem roots, version details or raw errors.
-  const runtimeRef = useRef<{ snapshot: RuntimeSnapshot | null; failed: boolean; at: string | null }>({ snapshot: null, failed: false, at: null });
-  useEffect(() => {
-    runtimeRef.current = { snapshot: runtime, failed: Boolean(runtimeError), at: runtime ? new Date().toISOString() : runtimeRef.current.at };
-  }, [runtime, runtimeError]);
+  // WebMCP: an agent reads which providers were connected when this page checked, without new provider probes.
   useEffect(() => {
     type ModelContext = { registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => unknown };
     const modelContext = (document as Document & { modelContext?: ModelContext }).modelContext;
     if (!modelContext?.registerTool) return;
     const controller = new AbortController();
     Promise.resolve()
-      .then(() => modelContext.registerTool({
-        name: "get_runtime_status",
-        description: "Which Rockbot providers are really connected right now (ready, needs sign-in, offline, unavailable), with counts, plus the routine count and run policy limits. Uses the status this page already loaded; the demo provider is left out. Read-only.",
-        inputSchema: { type: "object", properties: {} },
-        annotations: { readOnlyHint: true },
-        execute: () => {
-          const { snapshot, failed, at } = runtimeRef.current;
-          if (!snapshot) return JSON.stringify({ runtime_check: failed ? "failed" : "loading", error: failed ? "The local runtime check failed; reload Rockbot and try again." : "Runtime status is still loading; try again in a few seconds." });
-          const real = snapshot.providers.filter((provider) => provider.id !== "demo");
-          const byState: Record<string, number> = {};
-          real.forEach((provider) => { byState[provider.state] = (byState[provider.state] ?? 0) + 1; });
-          return JSON.stringify({
-            runtime_check: "ok", observed_at: at, status: snapshot.status, by_state: byState,
-            providers: real.map(({ id, label, state, installed }) => ({ id, label, state, installed })),
-            routines: snapshot.knowledge.routines,
-            policy: { max_concurrent_specialists: snapshot.policy.maxConcurrentSpecialists, max_evaluator_loops: snapshot.policy.maxEvaluatorLoops, external_actions_default: snapshot.policy.externalActionsDefault },
-          });
-        },
-      }, { signal: controller.signal }))
-      .catch(() => {});
+      .then(() => {
+        if (controller.signal.aborted) return; // StrictMode cleanup ran first: never register with a dead signal
+        return modelContext.registerTool({
+          name: "get_runtime_status",
+          description: "Which Rockbot providers were connected (ready, needs sign-in, offline, unavailable) when this page last checked, with counts, the check time (observed_at), the routine count and run policy limits. The demo provider is left out. Reload Rockbot for a fresh check. Read-only.",
+          inputSchema: { type: "object", properties: {} },
+          annotations: { readOnlyHint: true },
+          execute: () => runtimeStatusJson(runtimeCheckRef.current),
+        }, { signal: controller.signal });
+      })
+      .catch((error) => console.warn("WebMCP registerTool failed", "get_runtime_status", error));
     return () => controller.abort();
   }, []);
 
